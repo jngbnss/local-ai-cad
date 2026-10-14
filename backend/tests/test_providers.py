@@ -25,6 +25,18 @@ def test_mock_is_labelled_and_reports_no_gpu_usage():
     assert "mock" in result.text.lower()
 
 
+def test_mock_warmup_and_release_follow_server_lifecycle():
+    provider = MockModelProvider(CPU_SETTINGS)
+
+    provider.warm_up()
+    provider.warm_up()
+    assert provider.is_loaded is True
+    assert provider.load_count == 1
+
+    provider.release()
+    assert provider.is_loaded is False
+
+
 def test_real_provider_uses_a_different_provider_label():
     assert HuggingFaceModelProvider(CPU_SETTINGS).name == "huggingface"
     assert MockModelProvider(CPU_SETTINGS).name != HuggingFaceModelProvider(CPU_SETTINGS).name

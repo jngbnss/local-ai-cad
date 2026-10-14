@@ -26,10 +26,19 @@ from app.config import Settings
 
 logger = logging.getLogger(__name__)
 
-_MOCK_REPLY = (
-    "[mock] 이 응답은 모델을 로드하지 않고 생성한 고정 문자열입니다. "
-    "애플리케이션 경로 점검 전용이며 GPU 성능 지표가 아닙니다."
-)
+_MOCK_REPLY = """{
+  "schema_version": "1.0",
+  "unit": "mm",
+  "name": "mock_desk",
+  "parts": [
+    {"id":"top","primitive":"box","dimensions":{"x":1200,"y":600,"z":25},"position":{"x":0,"y":0,"z":725}},
+    {"id":"leg_fl","primitive":"box","dimensions":{"x":50,"y":50,"z":725},"position":{"x":-550,"y":-250,"z":0}},
+    {"id":"leg_fr","primitive":"box","dimensions":{"x":50,"y":50,"z":725},"position":{"x":550,"y":-250,"z":0}},
+    {"id":"leg_bl","primitive":"box","dimensions":{"x":50,"y":50,"z":725},"position":{"x":-550,"y":250,"z":0}},
+    {"id":"leg_br","primitive":"box","dimensions":{"x":50,"y":50,"z":725},"position":{"x":550,"y":250,"z":0}}
+  ],
+  "operations": [{"type":"union","targets":["top","leg_fl","leg_fr","leg_bl","leg_br"]}]
+}"""
 
 
 @dataclass(frozen=True, slots=True)
@@ -52,14 +61,29 @@ class ModelProvider(ABC):
     def is_loaded(self) -> bool:
         return self.load_count > 0
 
+    def warm_up(self) -> None:
+        """서버 lifespan에서 호출하는 선택적 예열 훅."""
+        return None
+
+    def release(self) -> None:
+        """서버 종료 시 provider가 소유한 자원을 해제한다."""
+        self.load_count = 0
+
     def generate(self, prompt: str) -> GenerationResult:
+        """단일 사용자 발화 추론. 내부적으로 chat 경로를 쓴다."""
         if not prompt.strip():
             raise ValueError("prompt 가 비어 있습니다.")
+        return self.generate_chat([{"role": "user", "content": prompt}])
+
+    def generate_chat(self, messages: list[dict[str, str]]) -> GenerationResult:
+        """system/few-shot 을 포함한 메시지 목록으로 추론한다."""
+        if not messages:
+            raise ValueError("messages 가 비어 있습니다.")
         with self._lock:
-            return self._generate(prompt)
+            return self._generate(messages)
 
     @abstractmethod
-    def _generate(self, prompt: str) -> GenerationResult:
+    def _generate(self, messages: list[dict[str, str]]) -> GenerationResult:
         """lock 을 획득한 상태에서 호출된다."""
 
 
@@ -68,7 +92,12 @@ class MockModelProvider(ModelProvider):
 
     name = "mock"
 
-    def _generate(self, prompt: str) -> GenerationResult:
+    def warm_up(self) -> None:
+        with self._lock:
+            if self.load_count == 0:
+                self.load_count = 1
+
+    def _generate(self, messages: list[dict[str, str]]) -> GenerationResult:
         with Stopwatch() as load_timer:
             if self.load_count == 0:
                 self.load_count = 1
@@ -76,6 +105,7 @@ class MockModelProvider(ModelProvider):
         with Stopwatch() as infer_timer:
             text = _MOCK_REPLY
 
+        prompt_text = " ".join(message["content"] for message in messages)
         metrics = InferenceMetrics(
             provider=self.name,
             model_id=self.settings.model_id,
@@ -83,7 +113,7 @@ class MockModelProvider(ModelProvider):
             dtype=self.settings.dtype,
             load_seconds=round(load_timer.seconds, 4),
             inference_seconds=round(infer_timer.seconds, 4),
-            input_tokens=len(prompt.split()),
+            input_tokens=len(prompt_text.split()),
             output_tokens=len(text.split()),
             peak_vram_mib=0.0,
         )
@@ -101,14 +131,30 @@ class HuggingFaceModelProvider(ModelProvider):
         self._model = None
         self._load_seconds = 0.0
 
-    def _generate(self, prompt: str) -> GenerationResult:
+    def warm_up(self) -> None:
+        with self._lock:
+            self._ensure_loaded()
+
+    def release(self) -> None:
+        with self._lock:
+            self._model = None
+            self._tokenizer = None
+            self.load_count = 0
+            try:
+                torch = _import_torch()
+                if self.settings.device == "cuda" and torch.cuda.is_available():
+                    torch.cuda.empty_cache()
+            except TorchNotInstalledError:
+                pass
+
+    def _generate(self, messages: list[dict[str, str]]) -> GenerationResult:
         import torch
 
         load_seconds = self._ensure_loaded()
         settings = self.settings
         device = settings.device
 
-        messages = [{"role": "user", "content": prompt}]
+
         rendered = self._tokenizer.apply_chat_template(
             messages, tokenize=False, add_generation_prompt=True
         )

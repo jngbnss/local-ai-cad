@@ -1,0 +1,20 @@
+{"id":"box-01","prompt":"가로 100mm, 세로 80mm, 높이 40mm인 직육면체를 만들어줘"}
+{"id":"box-02","prompt":"20cm x 15cm x 5cm 크기의 받침대를 설계해줘"}
+{"id":"cylinder-01","prompt":"반지름 30mm, 높이 100mm인 원기둥을 만들어줘"}
+{"id":"cylinder-02","prompt":"지름 8cm, 높이 12cm인 원통형 기둥을 만들어줘"}
+{"id":"plate-01","prompt":"가로 300mm, 세로 200mm, 두께 10mm 판을 만들어줘"}
+{"id":"desk-01","prompt":"가로 120cm, 깊이 60cm, 높이 75cm인 책상을 만들어줘. 상판 두께는 25mm이고 다리는 네 개야"}
+{"id":"desk-02","prompt":"폭 1000mm, 깊이 500mm, 높이 720mm 책상. 다리 두께는 40mm로 해줘"}
+{"id":"table-01","prompt":"800 x 400 x 750mm 사이드 테이블을 만들어줘"}
+{"id":"bench-01","prompt":"길이 1200mm, 깊이 350mm, 높이 450mm 벤치를 만들어줘. 상판과 다리 두 개로 구성해"}
+{"id":"shelf-01","prompt":"가로 600mm, 깊이 250mm, 두께 18mm인 선반 판 하나를 만들어줘"}
+{"id":"leg-01","prompt":"50mm 정사각 단면에 높이 700mm인 가구 다리를 만들어줘"}
+{"id":"post-01","prompt":"반지름 25mm, 높이 900mm인 둥근 기둥을 설계해줘"}
+{"id":"block-01","prompt":"1m x 0.5m x 0.1m 크기의 블록을 만들어줘"}
+{"id":"panel-01","prompt":"가로 45cm, 세로 30cm, 두께 2cm 패널을 만들어줘"}
+{"id":"top-01","prompt":"폭 1400mm, 깊이 700mm, 두께 30mm인 테이블 상판을 만들어줘"}
+{"id":"stool-01","prompt":"좌판 400 x 400 x 30mm, 전체 높이 450mm인 네 다리 스툴을 만들어줘"}
+{"id":"cabinet-01","prompt":"가로 600mm, 깊이 400mm, 높이 800mm인 단순한 수납장 몸체를 박스로 만들어줘"}
+{"id":"base-01","prompt":"지름 200mm, 두께 20mm인 원형 받침을 만들어줘"}
+{"id":"beam-01","prompt":"길이 1500mm, 폭 80mm, 높이 120mm인 보를 만들어줘"}
+{"id":"cube-01","prompt":"한 변이 75mm인 정육면체를 만들어줘"}

@@ -3,8 +3,30 @@
 자연어로 CAD를 설계하는 로컬 AI 도구. **외부 LLM API를 쓰지 않고** 이 PC의 GPU에서 모델을 직접 실행한다.
 
 - 전체 단계 로드맵: `docs/roadmap.md`
-- 현재 단계: **Phase 1 완료** — 로컬 GPU LLM 기준선 확보
+- 현재 단계: **Phase 1~6 완료** — API, DesignSpec, CAD 생성, SSE 3D UI, 영속 이력 검증
 - Phase 1 상세 설계: `docs/phase-1-design.md`
+
+## MVP 실행
+
+백엔드와 프론트엔드를 각각 한 터미널에서 실행한다.
+
+```powershell
+# 터미널 1: 실제 로컬 GPU 모델
+$env:PYTHONPATH = "backend"
+.\.venv\Scripts\python.exe -m app.main
+
+# 터미널 2
+cd frontend
+npm.cmd run dev
+```
+
+브라우저에서 `http://127.0.0.1:5173`을 연다. GPU 모델 없이 전체 흐름만 빠르게
+확인하려면 백엔드 실행 전에 `$env:LOCAL_AI_CAD_USE_MOCK = "1"`을 지정한다. Mock도
+DesignSpec → CadQuery → STL/STEP → Three.js 경로를 실제로 실행하며 성능 측정에는 쓰지 않는다.
+
+실제 모델 20문항 평가는 1차 80%, 교정 재시도 포함 90%였다. 상세 결과는
+`experiments/spec_accuracy_report.md`에 있다. 다음 단계는 Phase 7 Docker/WSL2 패키징이며,
+복합 가구 정확도 개선을 위한 트랙 Q(LoRA/모델 교체)는 별도 권장 항목이다.
 
 ---
 

@@ -13,7 +13,7 @@ from typing import Mapping
 DEFAULT_MODEL_ID = "Qwen/Qwen2.5-1.5B-Instruct"
 DEFAULT_DEVICE = "cuda"
 DEFAULT_DTYPE = "float16"
-DEFAULT_MAX_NEW_TOKENS = 256
+DEFAULT_MAX_NEW_TOKENS = 512
 DEFAULT_LOG_LEVEL = "INFO"
 
 SUPPORTED_DEVICES = ("cuda", "cpu")

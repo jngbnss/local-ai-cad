@@ -5,12 +5,17 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "local-ai-cad"
 version = "0.1.0"
-description = "로컬 GPU에서 실행하는 AI CAD 보조 도구 — Phase 1 추론 기준선"
+description = "로컬 GPU LLM과 CadQuery로 자연어 설계를 CAD 파일로 만드는 도구"
 requires-python = ">=3.11,<3.12"
 dependencies = [
     "torch>=2.14,<3",
     "transformers>=4.57,<5",
     "accelerate>=1.0,<2",
+    "cadquery>=2.8,<3",
+    "fastapi>=0.143,<1",
+    "pydantic>=2.14,<3",
+    "python-dotenv>=1.2,<2",
+    "uvicorn[standard]>=0.54,<1",
 ]
 
 [project.optional-dependencies]
