@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "local-ai-cad"
+version = "0.1.0"
+description = "로컬 GPU에서 실행하는 AI CAD 보조 도구 — Phase 1 추론 기준선"
+requires-python = ">=3.11,<3.12"
+dependencies = [
+    "torch>=2.14,<3",
+    "transformers>=4.57,<5",
+    "accelerate>=1.0,<2",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0,<9"]
+
+[project.scripts]
+local-ai-cad = "app.ai.cli:main"
+
+[tool.setuptools]
+package-dir = { "" = "backend" }
+
+[tool.setuptools.packages.find]
+where = ["backend"]
+include = ["app*"]
+
+[tool.pytest.ini_options]
+testpaths = ["backend/tests"]
+pythonpath = ["backend"]

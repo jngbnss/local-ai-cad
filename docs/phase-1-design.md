@@ -107,12 +107,13 @@ local-ai-cad/
 │  │     ├─ __init__.py
 │  │     ├─ cli.py
 │  │     ├─ diagnostics.py
+│  │     ├─ errors.py
 │  │     ├─ metrics.py
 │  │     └─ providers.py
 │  └─ tests/
 │     ├─ test_config.py
 │     ├─ test_diagnostics.py
-│     └─ test_mock_provider.py
+│     └─ test_providers.py
 ├─ datasets/
 ├─ experiments/
 ├─ frontend/
@@ -268,3 +269,20 @@ Python 3.11 설치 후 `.venv`를 생성한다. PyTorch는 구현 시점의 공�
 ## 15. Phase 2 진입 조건
 
 Phase 1 완료 보고서에 실제 모델 ID, 설치된 잠금 버전, CUDA 인식 결과, 첫/후속 요청 시간, peak VRAM, 성공 또는 실패 로그, 재현 명령을 기록한다. 성공 측정값이 없는 경우 Phase 2 구현으로 넘어가지 않고 환경 문제와 코드 문제를 분리해 해결한다.
+
+### 진입 조건 충족 여부 (2026-10-14)
+
+충족했다. 완료 보고서는 `README.md` 의 "Phase 1 완료 보고" 절이며 다음을 실측값으로 담는다.
+
+| 요구 항목 | 실측 |
+|---|---|
+| 모델 ID | `Qwen/Qwen2.5-1.5B-Instruct` |
+| 잠금 버전 | `requirements.lock` (torch 2.14.1+cu130, transformers 4.57.6, accelerate 1.15.0) |
+| CUDA 인식 | `cuda_available=true`, `NVIDIA GeForce RTX 4060`, `torch.version.cuda=13.0`, 드라이버 591.86 |
+| 첫 요청 | load 11.705s + 추론 21.097s, 출력 256 토큰 |
+| 후속 요청 | load 0.0s + 추론 19.848s, `model_load_count=1` |
+| peak VRAM | 2963.8 MiB |
+| 실패 로그 | OOM 경로가 실제로 발생해 종료 코드 5로 실패 처리됨. VRAM 확보 후 동일 명령 성공 |
+| 재현 명령 | `python -m app.ai.cli infer --repeat 2` (`PYTHONPATH=backend`) |
+
+Phase 2(FastAPI 서버와 모델 수명주기)로 진행 가능하다.
