@@ -3,6 +3,8 @@
 자연어로 CAD를 설계하는 로컬 AI 도구. **외부 LLM API를 쓰지 않고** 이 PC의 GPU에서 모델을 직접 실행한다.
 
 - 전체 단계 로드맵: `docs/roadmap.md`
+- 현재 진행 현황과 인수인계: `STATUS.md`
+- 앞으로의 체크리스트: `TODO.md`
 - 현재 단계: **Phase 1~6 완료** — API, DesignSpec, CAD 생성, SSE 3D UI, 영속 이력 검증
 - Phase 1 상세 설계: `docs/phase-1-design.md`
 
