@@ -19,7 +19,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0,<9"]
+dev = ["httpx2>=2.13,<3", "pytest>=8.0,<9"]
 
 [project.scripts]
 local-ai-cad = "app.ai.cli:main"
