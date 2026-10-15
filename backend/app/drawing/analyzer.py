@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+from io import BytesIO
 from dataclasses import dataclass, field
 from math import pi
 from pathlib import Path
@@ -14,6 +15,7 @@ from typing import Any
 
 import cv2
 import numpy as np
+from PIL import Image, ImageOps, UnidentifiedImageError
 
 from app.drawing.errors import ImageTooLargeError, ProfileDetectionError, UnsupportedImageError
 
@@ -111,13 +113,25 @@ def analyze_image(data: bytes, region: AnalysisRegion | None = None) -> Detected
     if len(data) > MAX_FILE_BYTES:
         raise ImageTooLargeError(f"이미지는 {MAX_FILE_BYTES}바이트 이하여야 합니다.")
 
-    encoded = np.frombuffer(data, dtype=np.uint8)
-    image = cv2.imdecode(encoded, cv2.IMREAD_COLOR)
-    if image is None:
-        raise UnsupportedImageError("PNG, JPEG 또는 WebP 이미지를 디코딩하지 못했습니다.")
+    if not _supported_magic(data):
+        raise UnsupportedImageError("PNG, JPEG 또는 WebP 파일만 지원합니다.")
+    try:
+        with Image.open(BytesIO(data)) as source:
+            if source.format not in {"PNG", "JPEG", "WEBP"}:
+                raise UnsupportedImageError("PNG, JPEG 또는 WebP 파일만 지원합니다.")
+            width, height = source.size
+            if width * height > MAX_PIXELS:
+                raise ImageTooLargeError(
+                    f"디코딩한 이미지 픽셀 수가 상한 {MAX_PIXELS}을 넘었습니다."
+                )
+            oriented = ImageOps.exif_transpose(source)
+            rgb = np.asarray(oriented.convert("RGB"))
+            image = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
+    except (UnidentifiedImageError, OSError) as exc:
+        raise UnsupportedImageError(
+            "PNG, JPEG 또는 WebP 이미지를 디코딩하지 못했습니다."
+        ) from exc
     height, width = image.shape[:2]
-    if width * height > MAX_PIXELS:
-        raise ImageTooLargeError(f"디코딩한 이미지 픽셀 수가 상한 {MAX_PIXELS}을 넘었습니다.")
 
     selected = (region or AnalysisRegion(0, 0, width, height)).clamp(width, height)
     cropped = image[
@@ -172,6 +186,14 @@ def analyze_image(data: bytes, region: AnalysisRegion | None = None) -> Detected
         warnings=warnings,
         analysis_seconds=round(perf_counter() - started, 6),
         normalized_png=png.tobytes(),
+    )
+
+
+def _supported_magic(data: bytes) -> bool:
+    return (
+        data.startswith(b"\x89PNG\r\n\x1a\n")
+        or data.startswith(b"\xff\xd8\xff")
+        or (len(data) >= 12 and data[:4] == b"RIFF" and data[8:12] == b"WEBP")
     )
 
 

@@ -31,12 +31,12 @@
 
 ## D2 — 이미지 분석
 
-- [ ] magic bytes, 디코딩, 파일 크기, 픽셀 상한을 검증한다.
-- [ ] EXIF 방향을 적용하고 메타데이터를 제거한다.
-- [ ] analysis region 밖 픽셀을 분석하지 않는다.
-- [ ] outer 후보와 circle/polygon hole 후보를 반환한다.
-- [ ] 자동 확정 불가 입력은 후보·경고를 반환하고 형상을 조용히 고치지 않는다.
-- [ ] 30개 회귀셋에서 outer/hole/CAD 결과를 측정한다.
+- [x] magic bytes, 디코딩, 파일 크기, 픽셀 상한을 검증한다.
+- [x] EXIF 방향을 적용하고 메타데이터를 제거한다.
+- [x] analysis region 밖 픽셀을 분석하지 않는다.
+- [x] outer 후보와 circle/polygon hole 후보를 반환한다.
+- [x] 자동 확정 불가 입력은 후보·경고를 반환하고 형상을 조용히 고치지 않는다.
+- [x] 합성 30개 회귀셋에서 outer/hole/CAD 결과를 측정했다.
 
 ## D3 — 동기 API
 

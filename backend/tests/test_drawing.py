@@ -1,15 +1,17 @@
 from __future__ import annotations
 
+from io import BytesIO
 import json
 from pathlib import Path
 
 import pytest
+from PIL import Image, ImageDraw
 from app.cad.builder import build_solid
 from app.cad.validate import validate_solid
 from app.design.schema import DesignSpec
 
-from app.drawing.analyzer import analyze_path, overlay_svg
-from app.drawing.errors import ProfileInvalidError
+from app.drawing.analyzer import AnalysisRegion, analyze_image, analyze_path, overlay_svg
+from app.drawing.errors import ProfileInvalidError, UnsupportedImageError
 from app.drawing.fixtures import generate_suite
 from app.drawing.prototype import build_prototype_solid, confirmed_profile, export_step
 
@@ -135,3 +137,41 @@ def test_design_spec_rejects_invalid_sketch_topology(profile):
                 "operations": [],
             }
         )
+
+
+def test_analysis_region_excludes_other_shapes():
+    image = Image.new("RGB", (800, 600), "white")
+    draw = ImageDraw.Draw(image)
+    draw.rectangle((50, 100, 300, 500), fill="black")
+    draw.rectangle((500, 100, 750, 500), fill="black")
+    stream = BytesIO()
+    image.save(stream, format="PNG")
+
+    full = analyze_image(stream.getvalue())
+    selected = analyze_image(
+        stream.getvalue(), region=AnalysisRegion(x=0, y=0, width=400, height=600)
+    )
+
+    assert len(full.outer_candidates) == 2
+    assert len(selected.outer_candidates) == 1
+
+
+def test_exif_orientation_is_applied_before_analysis():
+    image = Image.new("RGB", (80, 40), "white")
+    ImageDraw.Draw(image).rectangle((10, 8, 70, 32), fill="black")
+    exif = Image.Exif()
+    exif[274] = 6
+    stream = BytesIO()
+    image.save(stream, format="JPEG", exif=exif)
+
+    detected = analyze_image(stream.getvalue())
+
+    assert (detected.width_px, detected.height_px) == (40, 80)
+
+
+def test_decodable_but_unsupported_gif_is_rejected():
+    stream = BytesIO()
+    Image.new("RGB", (100, 100), "white").save(stream, format="GIF")
+
+    with pytest.raises(UnsupportedImageError, match="PNG, JPEG 또는 WebP"):
+        analyze_image(stream.getvalue())
