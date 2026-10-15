@@ -12,6 +12,7 @@ dependencies = [
     "transformers>=4.57,<5",
     "accelerate>=1.0,<2",
     "cadquery>=2.8,<3",
+    "psutil>=7.2,<8",
     "fastapi>=0.143,<1",
     "opencv-python-headless>=5.0,<6",
     "pillow>=12.3,<13",

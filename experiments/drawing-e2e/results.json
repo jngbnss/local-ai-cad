@@ -1,0 +1,256 @@
+{
+  "metrics": {
+    "cases": 30,
+    "passed": 30,
+    "e2e_p95_seconds": 0.18309859999953915,
+    "rss_start_mib": 1287.21484375,
+    "rss_peak_mib": 1292.9375,
+    "rss_growth_mib": 5.72265625,
+    "disk_growth_mib": 1.5072660446166992,
+    "network_hosts": [
+      "127.0.0.1"
+    ]
+  },
+  "cases": [
+    {
+      "id": "drawing-01-rectangle-01",
+      "ok": true,
+      "holes": 0,
+      "seconds": 0.17300870000053692,
+      "max_axis_error_mm": 0.0,
+      "step_bytes": 15475
+    },
+    {
+      "id": "drawing-02-l-shape-02",
+      "ok": true,
+      "holes": 0,
+      "seconds": 0.09501869999985502,
+      "max_axis_error_mm": 0.0,
+      "step_bytes": 22653
+    },
+    {
+      "id": "drawing-03-u-shape-03",
+      "ok": true,
+      "holes": 0,
+      "seconds": 0.132741100000203,
+      "max_axis_error_mm": 0.0,
+      "step_bytes": 29413
+    },
+    {
+      "id": "drawing-04-one-hole-04",
+      "ok": true,
+      "holes": 1,
+      "seconds": 0.16893489999984013,
+      "max_axis_error_mm": 0.0,
+      "step_bytes": 20441
+    },
+    {
+      "id": "drawing-05-four-holes-05",
+      "ok": true,
+      "holes": 4,
+      "seconds": 0.1701191000001927,
+      "max_axis_error_mm": 0.0,
+      "step_bytes": 35222
+    },
+    {
+      "id": "drawing-06-polygon-hole-06",
+      "ok": true,
+      "holes": 1,
+      "seconds": 0.16757049999978335,
+      "max_axis_error_mm": 0.0,
+      "step_bytes": 36457
+    },
+    {
+      "id": "drawing-07-inverted-07",
+      "ok": true,
+      "holes": 1,
+      "seconds": 0.11993879999954515,
+      "max_axis_error_mm": 0.0,
+      "step_bytes": 20443
+    },
+    {
+      "id": "drawing-08-thick-outline-08",
+      "ok": true,
+      "holes": 0,
+      "seconds": 0.11487250000027416,
+      "max_axis_error_mm": 0.0,
+      "step_bytes": 16259
+    },
+    {
+      "id": "drawing-09-low-contrast-09",
+      "ok": true,
+      "holes": 1,
+      "seconds": 0.18309859999953915,
+      "max_axis_error_mm": 0.0,
+      "step_bytes": 20443
+    },
+    {
+      "id": "drawing-10-noise-10",
+      "ok": true,
+      "holes": 1,
+      "seconds": 0.14059520000046177,
+      "max_axis_error_mm": 0.0,
+      "step_bytes": 20439
+    },
+    {
+      "id": "drawing-11-rectangle-11",
+      "ok": true,
+      "holes": 0,
+      "seconds": 0.1430011000002196,
+      "max_axis_error_mm": 0.0,
+      "step_bytes": 15477
+    },
+    {
+      "id": "drawing-12-l-shape-12",
+      "ok": true,
+      "holes": 0,
+      "seconds": 0.15940999999929772,
+      "max_axis_error_mm": 0.0,
+      "step_bytes": 22655
+    },
+    {
+      "id": "drawing-13-u-shape-13",
+      "ok": true,
+      "holes": 0,
+      "seconds": 0.13528749999932188,
+      "max_axis_error_mm": 0.0,
+      "step_bytes": 29415
+    },
+    {
+      "id": "drawing-14-one-hole-14",
+      "ok": true,
+      "holes": 1,
+      "seconds": 0.13055269999949815,
+      "max_axis_error_mm": 0.0,
+      "step_bytes": 20446
+    },
+    {
+      "id": "drawing-15-four-holes-15",
+      "ok": true,
+      "holes": 4,
+      "seconds": 0.17592200000035518,
+      "max_axis_error_mm": 0.0,
+      "step_bytes": 35236
+    },
+    {
+      "id": "drawing-16-polygon-hole-16",
+      "ok": true,
+      "holes": 1,
+      "seconds": 0.1488307999998142,
+      "max_axis_error_mm": 0.0,
+      "step_bytes": 36459
+    },
+    {
+      "id": "drawing-17-inverted-17",
+      "ok": true,
+      "holes": 1,
+      "seconds": 0.11855780000041705,
+      "max_axis_error_mm": 0.0,
+      "step_bytes": 20448
+    },
+    {
+      "id": "drawing-18-thick-outline-18",
+      "ok": true,
+      "holes": 0,
+      "seconds": 0.1088356999998723,
+      "max_axis_error_mm": 0.0,
+      "step_bytes": 16261
+    },
+    {
+      "id": "drawing-19-low-contrast-19",
+      "ok": true,
+      "holes": 1,
+      "seconds": 0.14042980000067473,
+      "max_axis_error_mm": 0.0,
+      "step_bytes": 20446
+    },
+    {
+      "id": "drawing-20-noise-20",
+      "ok": true,
+      "holes": 1,
+      "seconds": 0.12681900000006863,
+      "max_axis_error_mm": 0.0,
+      "step_bytes": 20442
+    },
+    {
+      "id": "drawing-21-rectangle-21",
+      "ok": true,
+      "holes": 0,
+      "seconds": 0.12258329999986017,
+      "max_axis_error_mm": 0.0,
+      "step_bytes": 15477
+    },
+    {
+      "id": "drawing-22-l-shape-22",
+      "ok": true,
+      "holes": 0,
+      "seconds": 0.12991990000045917,
+      "max_axis_error_mm": 0.0,
+      "step_bytes": 22655
+    },
+    {
+      "id": "drawing-23-u-shape-23",
+      "ok": true,
+      "holes": 0,
+      "seconds": 0.14863169999989623,
+      "max_axis_error_mm": 0.0,
+      "step_bytes": 29415
+    },
+    {
+      "id": "drawing-24-one-hole-24",
+      "ok": true,
+      "holes": 1,
+      "seconds": 0.15073579999989306,
+      "max_axis_error_mm": 0.0,
+      "step_bytes": 20446
+    },
+    {
+      "id": "drawing-25-four-holes-25",
+      "ok": true,
+      "holes": 4,
+      "seconds": 0.19469709999975748,
+      "max_axis_error_mm": 0.0,
+      "step_bytes": 35236
+    },
+    {
+      "id": "drawing-26-polygon-hole-26",
+      "ok": true,
+      "holes": 1,
+      "seconds": 0.14992379999966943,
+      "max_axis_error_mm": 0.0,
+      "step_bytes": 36459
+    },
+    {
+      "id": "drawing-27-inverted-27",
+      "ok": true,
+      "holes": 1,
+      "seconds": 0.14598770000065997,
+      "max_axis_error_mm": 0.0,
+      "step_bytes": 20448
+    },
+    {
+      "id": "drawing-28-thick-outline-28",
+      "ok": true,
+      "holes": 0,
+      "seconds": 0.10690160000012838,
+      "max_axis_error_mm": 0.0,
+      "step_bytes": 16261
+    },
+    {
+      "id": "drawing-29-low-contrast-29",
+      "ok": true,
+      "holes": 1,
+      "seconds": 0.14443779999965045,
+      "max_axis_error_mm": 0.0,
+      "step_bytes": 20446
+    },
+    {
+      "id": "drawing-30-noise-30",
+      "ok": true,
+      "holes": 1,
+      "seconds": 0.1411630000002333,
+      "max_axis_error_mm": 0.0,
+      "step_bytes": 20442
+    }
+  ]
+}
