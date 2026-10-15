@@ -1,0 +1,162 @@
+[
+  {
+    "id": "drawing-01-rectangle",
+    "image": "drawing-01-rectangle.png",
+    "reference_start_px": [
+      100.0,
+      550.0
+    ],
+    "reference_end_px": [
+      700.0,
+      550.0
+    ],
+    "reference_length_mm": 120.0,
+    "depth_mm": 10.0,
+    "expected_holes": 0,
+    "synthetic": true
+  },
+  {
+    "id": "drawing-02-l-shape",
+    "image": "drawing-02-l-shape.png",
+    "reference_start_px": [
+      100.0,
+      550.0
+    ],
+    "reference_end_px": [
+      700.0,
+      550.0
+    ],
+    "reference_length_mm": 120.0,
+    "depth_mm": 10.0,
+    "expected_holes": 0,
+    "synthetic": true
+  },
+  {
+    "id": "drawing-03-u-shape",
+    "image": "drawing-03-u-shape.png",
+    "reference_start_px": [
+      100.0,
+      550.0
+    ],
+    "reference_end_px": [
+      700.0,
+      550.0
+    ],
+    "reference_length_mm": 120.0,
+    "depth_mm": 10.0,
+    "expected_holes": 0,
+    "synthetic": true
+  },
+  {
+    "id": "drawing-04-one-hole",
+    "image": "drawing-04-one-hole.png",
+    "reference_start_px": [
+      100.0,
+      550.0
+    ],
+    "reference_end_px": [
+      700.0,
+      550.0
+    ],
+    "reference_length_mm": 120.0,
+    "depth_mm": 10.0,
+    "expected_holes": 1,
+    "synthetic": true
+  },
+  {
+    "id": "drawing-05-four-holes",
+    "image": "drawing-05-four-holes.png",
+    "reference_start_px": [
+      100.0,
+      550.0
+    ],
+    "reference_end_px": [
+      700.0,
+      550.0
+    ],
+    "reference_length_mm": 120.0,
+    "depth_mm": 10.0,
+    "expected_holes": 4,
+    "synthetic": true
+  },
+  {
+    "id": "drawing-06-polygon-hole",
+    "image": "drawing-06-polygon-hole.png",
+    "reference_start_px": [
+      100.0,
+      550.0
+    ],
+    "reference_end_px": [
+      700.0,
+      550.0
+    ],
+    "reference_length_mm": 120.0,
+    "depth_mm": 10.0,
+    "expected_holes": 1,
+    "synthetic": true
+  },
+  {
+    "id": "drawing-07-inverted",
+    "image": "drawing-07-inverted.png",
+    "reference_start_px": [
+      100.0,
+      550.0
+    ],
+    "reference_end_px": [
+      700.0,
+      550.0
+    ],
+    "reference_length_mm": 120.0,
+    "depth_mm": 10.0,
+    "expected_holes": 1,
+    "synthetic": true
+  },
+  {
+    "id": "drawing-08-thick-outline",
+    "image": "drawing-08-thick-outline.png",
+    "reference_start_px": [
+      100.0,
+      550.0
+    ],
+    "reference_end_px": [
+      700.0,
+      550.0
+    ],
+    "reference_length_mm": 120.0,
+    "depth_mm": 10.0,
+    "expected_holes": 0,
+    "synthetic": true
+  },
+  {
+    "id": "drawing-09-low-contrast",
+    "image": "drawing-09-low-contrast.png",
+    "reference_start_px": [
+      100.0,
+      550.0
+    ],
+    "reference_end_px": [
+      700.0,
+      550.0
+    ],
+    "reference_length_mm": 120.0,
+    "depth_mm": 10.0,
+    "expected_holes": 1,
+    "synthetic": true
+  },
+  {
+    "id": "drawing-10-noise",
+    "image": "drawing-10-noise.png",
+    "reference_start_px": [
+      100.0,
+      550.0
+    ],
+    "reference_end_px": [
+      700.0,
+      550.0
+    ],
+    "reference_length_mm": 120.0,
+    "depth_mm": 10.0,
+    "expected_holes": 1,
+    "synthetic": true
+  }
+]

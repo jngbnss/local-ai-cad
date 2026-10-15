@@ -21,3 +21,4 @@ models/
 .pytest-tmp*/
 artifacts/
 designs.sqlite3
+experiments/drawing-d0/drawing-*/

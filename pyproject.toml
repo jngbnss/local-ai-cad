@@ -13,8 +13,11 @@ dependencies = [
     "accelerate>=1.0,<2",
     "cadquery>=2.8,<3",
     "fastapi>=0.143,<1",
+    "opencv-python-headless>=5.0,<6",
     "pydantic>=2.14,<3",
     "python-dotenv>=1.2,<2",
+    "python-multipart>=0.0.32,<1",
+    "shapely>=2.2,<3",
     "uvicorn[standard]>=0.54,<1",
 ]
 

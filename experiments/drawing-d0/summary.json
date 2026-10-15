@@ -1,0 +1,184 @@
+[
+  {
+    "id": "drawing-01-rectangle",
+    "ok": true,
+    "synthetic": true,
+    "outer_candidates": 1,
+    "holes": 0,
+    "manual_edits": 0,
+    "analysis_seconds": 0.012984,
+    "total_seconds": 0.03687,
+    "warnings": [],
+    "volume_mm3": 96000.0,
+    "bounding_box_mm": [
+      120.0,
+      80.0,
+      10.0
+    ],
+    "error": null
+  },
+  {
+    "id": "drawing-02-l-shape",
+    "ok": true,
+    "synthetic": true,
+    "outer_candidates": 1,
+    "holes": 0,
+    "manual_edits": 0,
+    "analysis_seconds": 0.007381,
+    "total_seconds": 0.018961,
+    "warnings": [],
+    "volume_mm3": 61069.999999999985,
+    "bounding_box_mm": [
+      120.0,
+      80.0,
+      10.0
+    ],
+    "error": null
+  },
+  {
+    "id": "drawing-03-u-shape",
+    "ok": true,
+    "synthetic": true,
+    "outer_candidates": 1,
+    "holes": 0,
+    "manual_edits": 0,
+    "analysis_seconds": 0.006864,
+    "total_seconds": 0.018916,
+    "warnings": [],
+    "volume_mm3": 73056.0,
+    "bounding_box_mm": [
+      120.0,
+      80.0,
+      10.0
+    ],
+    "error": null
+  },
+  {
+    "id": "drawing-04-one-hole",
+    "ok": true,
+    "synthetic": true,
+    "outer_candidates": 1,
+    "holes": 1,
+    "manual_edits": 0,
+    "analysis_seconds": 0.005461,
+    "total_seconds": 0.029081,
+    "warnings": [],
+    "volume_mm3": 89686.63769371263,
+    "bounding_box_mm": [
+      120.0,
+      80.0,
+      10.0
+    ],
+    "error": null
+  },
+  {
+    "id": "drawing-05-four-holes",
+    "ok": true,
+    "synthetic": true,
+    "outer_candidates": 1,
+    "holes": 4,
+    "manual_edits": 0,
+    "analysis_seconds": 0.005759,
+    "total_seconds": 0.046793,
+    "warnings": [],
+    "volume_mm3": 89520.74363010764,
+    "bounding_box_mm": [
+      120.0,
+      80.0,
+      10.0
+    ],
+    "error": null
+  },
+  {
+    "id": "drawing-06-polygon-hole",
+    "ok": true,
+    "synthetic": true,
+    "outer_candidates": 1,
+    "holes": 1,
+    "manual_edits": 0,
+    "analysis_seconds": 0.005789,
+    "total_seconds": 0.026684,
+    "warnings": [],
+    "volume_mm3": 86661.40000000001,
+    "bounding_box_mm": [
+      120.0,
+      80.0,
+      10.0
+    ],
+    "error": null
+  },
+  {
+    "id": "drawing-07-inverted",
+    "ok": true,
+    "synthetic": true,
+    "outer_candidates": 1,
+    "holes": 1,
+    "manual_edits": 0,
+    "analysis_seconds": 0.005859,
+    "total_seconds": 0.024228,
+    "warnings": [],
+    "volume_mm3": 91342.88775346325,
+    "bounding_box_mm": [
+      120.0,
+      80.0,
+      10.0
+    ],
+    "error": null
+  },
+  {
+    "id": "drawing-08-thick-outline",
+    "ok": true,
+    "synthetic": true,
+    "outer_candidates": 1,
+    "holes": 0,
+    "manual_edits": 0,
+    "analysis_seconds": 0.005686,
+    "total_seconds": 0.016212,
+    "warnings": [
+      "double_contour_suspected"
+    ],
+    "volume_mm3": 100864.0,
+    "bounding_box_mm": [
+      123.20000000000002,
+      83.20000000000002,
+      10.0
+    ],
+    "error": null
+  },
+  {
+    "id": "drawing-09-low-contrast",
+    "ok": true,
+    "synthetic": true,
+    "outer_candidates": 1,
+    "holes": 1,
+    "manual_edits": 0,
+    "analysis_seconds": 0.005579,
+    "total_seconds": 0.02374,
+    "warnings": [],
+    "volume_mm3": 92072.99505434069,
+    "bounding_box_mm": [
+      120.0,
+      80.0,
+      10.0
+    ],
+    "error": null
+  },
+  {
+    "id": "drawing-10-noise",
+    "ok": true,
+    "synthetic": true,
+    "outer_candidates": 1,
+    "holes": 1,
+    "manual_edits": 0,
+    "analysis_seconds": 0.005689,
+    "total_seconds": 0.0239,
+    "warnings": [],
+    "volume_mm3": 92736.5006443345,
+    "bounding_box_mm": [
+      120.0,
+      80.0,
+      10.0
+    ],
+    "error": null
+  }
+]
