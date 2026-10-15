@@ -6,12 +6,14 @@
 
 상세 계약과 완료 기준은 [`docs/track-d-2d-drawing-import-design.md`](docs/track-d-2d-drawing-import-design.md)를 따른다.
 
-- [ ] D1: `SketchDraft`, `DesignSpec 2.0`, `sketch_extrusion` 기하 기반을 구현한다.
-- [ ] D2: 이미지 검증·정규화와 외곽선·구멍 검출을 구현하고 30개 평가셋을 만든다.
-- [ ] D3: import job API, SQLite 영속성, SSE, 구조화 오류를 구현한다.
-- [ ] D4: 업로드·보정·프로파일 수정·3D 생성 UI를 구현한다.
+- [ ] D0: 실제 도면 10개를 독립 CLI로 정규화·검출·SVG 오버레이·STEP까지 처리해 핵심 위험을 검증한다.
+- [ ] D1: D0 결과로 `SketchDraft`, `ConfirmedProfile`, `DesignSpec 2.0`, `sketch_extrusion` 계약을 확정한다.
+- [ ] D2: 이미지 검증·분석 영역·외곽선·구멍 검출을 구현하고 30개 회귀셋을 만든다.
+- [ ] D3: 동기 analyze/generate API와 임시 파일 정리를 구현한다.
+- [ ] D4: SVG 기반 보정·프로파일 수정·3D 생성 UI를 구현한다.
 - [ ] D5: 실제 브라우저 E2E와 치수·유효 솔리드 완료 기준을 검증한다.
-- [ ] D6: MVP 완료 후 사용자 확인형 OCR 치수 후보를 추가한다.
+- [ ] D6: 측정된 필요가 있을 때만 job·SSE·draft 영속성을 추가한다.
+- [ ] D7: MVP 완료 후 사용자 확인형 OCR 치수 후보를 추가한다.
 
 일반 제품 사진 복원은 Track D 범위가 아니다. 정면 도면 입력이 안정화된 뒤 별도 Track V로 진행한다.
 
