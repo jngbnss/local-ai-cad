@@ -86,6 +86,6 @@
 - [x] 백엔드 전체 테스트 57개가 통과한다.
 - [x] 프론트엔드 TypeScript 검사와 프로덕션 빌드가 통과한다.
 - [x] 실제 로컬 서버 health와 합성 30개 drawing E2E가 통과한다.
-- [ ] GitHub Actions가 최종 커밋에서 통과한다.
+- [x] 최종 구현 커밋 `f05fb5f`의 GitHub Actions backend/frontend가 통과했다([run 38661675846](https://github.com/jngbnss/local-ai-cad/actions/runs/38661675846)).
 - [x] README, STATUS, TODO, 설계, 오류 기록이 실제 상태와 일치한다.
-- [ ] 실제 사용자 도면이 없어서 검증하지 못한 항목은 완료로 표시하지 않는다.
+- [ ] 실제 사용자 도면 10개 검증 — 입력이 제공되지 않아 완료 처리하지 않는다.
