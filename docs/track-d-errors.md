@@ -16,6 +16,8 @@
 | D4-TOOL-001 | D4 | 우회 | 자동화 `browser.open`이 managed 옵션에서도 오래된 Browser Relay 오류로 실패 | QA 이슈 보고 후 설치된 Edge를 Puppeteer로 직접 구동해 실제 UI upload/edit/generate/Viewer를 검증 |
 | D5-ENV-001 | D5 | 관리됨 | Windows 임시 디렉터리 정리 중 외부 ESTsoft 프로세스 경합으로 pytest `WinError 145` 경고 | 55개 테스트는 모두 통과했으며 제품·테스트 결과에 영향 없음. 외부 프로세스 소유 경로는 삭제하지 않음 |
 | D7-001 | D7 | 해결 | 중단하지 않은 백엔드가 `cv2.pyd`를 점유해 기존 `rapidocr-onnxruntime` 설치가 `WinError 5`로 실패 | 서버를 중단하고 `opencv-python-headless`와 호환되는 유지보수 패키지 `rapidocr==3.10.0` 및 CPU `onnxruntime==1.31.0` 설치 |
+| FINAL-CI-001 | 최종 CI | 해결 | GitHub hosted runner가 Node 20 기반 `checkout@v4`, `setup-node@v4` 폐기 경고를 출력 | `checkout@v5`, `setup-node@v5`, `setup-python@v6`으로 갱신 |
+| FINAL-CI-002 | 최종 CI | 외부 공지 | `ubuntu-latest`가 2026-10-19부터 Ubuntu 26으로 이동 예정 | GitHub runner 이미지 공지이며 현재 빌드는 통과. 이동 후 CI에서 호환성을 계속 검증 |
 
 ## 단계별 추가 규칙
 
