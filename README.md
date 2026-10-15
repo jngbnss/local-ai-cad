@@ -5,10 +5,11 @@
 - 전체 단계 로드맵: `docs/roadmap.md`
 - 현재 진행 현황과 인수인계: `STATUS.md`
 - 앞으로의 체크리스트: `TODO.md`
-- 현재 단계: **Phase 1~6 완료** — API, DesignSpec, CAD 생성, SSE 3D UI, 영속 이력 검증
+- 현재 단계: **Phase 1~6 + Track D 구현 완료** — 자연어/2D 도면 → 편집 → 3D → STL/STEP
 - Phase 1 상세 설계: `docs/phase-1-design.md`
 - 2D 도면 이미지 → 3D CAD 설계: `docs/track-d-2d-drawing-import-design.md`
 - Track D 단계별 검증: `docs/track-d-checklist.md`
+- Track D 측정/운영 판정: `docs/track-d-operations-decision.md`
 - Track D 오류 기록: `docs/track-d-errors.md`
 
 ## MVP 실행
@@ -25,13 +26,19 @@ cd frontend
 npm.cmd run dev
 ```
 
-브라우저에서 `http://127.0.0.1:5173`을 연다. GPU 모델 없이 전체 흐름만 빠르게
-확인하려면 백엔드 실행 전에 `$env:LOCAL_AI_CAD_USE_MOCK = "1"`을 지정한다. Mock도
-DesignSpec → CadQuery → STL/STEP → Three.js 경로를 실제로 실행하며 성능 측정에는 쓰지 않는다.
+브라우저에서 `http://127.0.0.1:5173`을 연다. **2D 도면 가져오기** 탭에서는
+PNG/JPEG/WebP 업로드 → 분석 영역 선택 → 외곽선·구멍 편집 → 두 기준점과 실제 길이
+확인 → 돌출 깊이 입력 → 3D 생성 순서로 사용한다. OCR 치수는 CPU에서 후보만 제시하며
+사용자가 `기준 길이로 사용`을 누르기 전에는 적용되지 않는다.
+
+GPU 모델 없이 전체 흐름만 빠르게 확인하려면 백엔드 실행 전에
+`$env:LOCAL_AI_CAD_USE_MOCK = "1"`을 지정한다. 도면 분석과 CadQuery 생성은 mock이
+아니며 텍스트 설계의 LLM 호출만 mock으로 바뀐다.
 
 실제 모델 20문항 평가는 1차 80%, 교정 재시도 포함 90%였다. 상세 결과는
-`experiments/spec_accuracy_report.md`에 있다. 제품 목표인 도면 이미지 입력은 Track D로
-설계되어 있으며, Docker/WSL2 패키징은 Phase 7, 복합 가구 정확도 개선은 트랙 Q다.
+`experiments/spec_accuracy_report.md`에 있다. Track D는 합성 30개 입력에서 30/30
+통과했지만 사용자가 제공한 실제 도면 10개 검증은 입력 부재로 완료 처리하지 않았다.
+Docker/WSL2 패키징은 Phase 7, 복합 가구 정확도 개선은 트랙 Q다.
 
 ---
 

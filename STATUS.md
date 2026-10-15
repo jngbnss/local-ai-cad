@@ -1,7 +1,7 @@
 # Local AI CAD — 진행 현황 및 인수인계
 
-기준일: 2026-10-14  
-현재 상태: **Phase 1~6 완료, Phase 7 착수 전**
+기준일: 2026-10-15  
+현재 상태: **Phase 1~6 및 Track D 구현 완료, 실제 사용자 도면 검증 대기**
 
 ## 1. 지금까지 완료한 것
 
@@ -53,20 +53,31 @@
 - 동시 수정 버전 번호 충돌 방지
 - 미언급 필드 보존 테스트와 이력 UI 구현
 
+### Track D — 2D 도면 가져오기
+
+- PNG/JPEG/WebP 검증, EXIF 보정, 분석 영역 crop, 외곽선·원형/다각형 구멍 후보 검출
+- `DesignSpec 2.0`의 `sketch_extrusion`, 기존 1.0 이력 자동 마이그레이션
+- SVG 점·구멍 편집, 기준점 2개 보정, undo/redo, 기존 Three.js/다운로드 연결
+- CPU RapidOCR 치수 후보와 명시적 사용자 선택·수정·거부
+- 합성 30개 live HTTP E2E 30/30, OCR 포함 p95 1.3911초, 축 오차 0mm
+- 실제 사용자가 제공한 도면 10개는 입력 부재로 미검증
+
 ## 2. 현재 검증 상태
 
-- 백엔드 테스트: **40개 통과**
+- 백엔드 테스트: **57개 통과**
 - 프론트엔드 TypeScript 검사 및 프로덕션 빌드: 통과
-- Mock E2E: 프롬프트 → DesignSpec → CAD → 3D → 이력 통과
-- 실제 GPU E2E: 통과
+- Track D 합성 회귀: analyze → confirm → CAD → STEP **30/30**
+- 실제 Edge 브라우저: 영역 선택, SVG 편집, undo/redo, OCR 확인, 3D Viewer, STEP download event 통과
 - 작업 브랜치: `main`
-- Phase 1~6 구현 커밋: `11d983e`
+- Track D 최신 구현 커밋: `838d0e7`
 
 관련 문서:
 
 - `docs/phase-2-6-report.md`
 - `experiments/spec_accuracy_report.md`
 - `docs/roadmap.md`
+- `docs/track-d-checklist.md`
+- `experiments/drawing-e2e/report.md`
 
 ## 3. 실행 방법
 
@@ -90,20 +101,19 @@ $env:LOCAL_AI_CAD_USE_MOCK = "1"
 
 ## 4. 현재 제약과 알려진 문제
 
-- C: 여유 공간은 마지막 측정 기준 **24.1GB**다.
-- Phase 7은 추가 15~25GB를 사용할 수 있어 최소 35GB, 권장 40GB 이상의 여유 공간이 필요하다.
+- 실제 사용자 도면 10개가 없어 합성 회귀셋이 제품 입력 분포를 대표하는지는 아직 검증하지 못했다.
 - 복합 책상 2문항은 작은 모델이 중복 부품 ID를 교정하지 못한다.
-- 프론트엔드 번들은 약 790KB로 코드 분할 경고가 있다.
-- Starlette TestClient에서 `httpx` 사용 중단 경고가 1건 발생한다.
+- 앱 핵심 번들은 244KB로 분리했지만 Three.js Viewer chunk는 559KB 경고가 남는다.
+- Windows pytest 임시 폴더는 외부 ESTsoft 프로세스 경합 시 정리 경고가 날 수 있다. 테스트 결과에는 영향이 없었다.
 
 ## 5. 앞으로 할 일
 
 우선순위는 다음과 같다.
 
-1. C: 여유 공간을 최소 35GB 이상으로 확보한다.
-2. **Phase 7** Docker/WSL2 GPU 패키징을 진행한다.
-3. 컨테이너 실제 GPU E2E와 호스트 대비 성능을 측정한다.
-4. 필요하면 **트랙 Q**로 복합 가구 정확도를 90%에서 100%로 개선한다.
-5. 번들 분할, 테스트 경고, 요청 취소, 아티팩트 정리 정책을 보완한다.
+1. 사용자 실제 정면 도면 10개를 확보해 Track D 수동 수정 횟수와 성공률을 검증한다.
+2. C: 여유 공간을 최소 35GB 이상으로 확보한다.
+3. **Phase 7** Docker/WSL2 GPU 패키징을 진행한다.
+4. 컨테이너 실제 GPU E2E와 호스트 대비 성능을 측정한다.
+5. 필요하면 **트랙 Q**로 복합 가구 정확도를 90%에서 100%로 개선한다.
 
 세부 체크리스트와 완료 조건은 [`TODO.md`](TODO.md)를 따른다.

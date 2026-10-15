@@ -4,5 +4,5 @@
   "outer_success_rate": 1.0,
   "hole_recall": 1.0,
   "hole_false_positive_rate": 0.0,
-  "analysis_p95_seconds": 0.010481
+  "analysis_p95_seconds": 1.037817
 }

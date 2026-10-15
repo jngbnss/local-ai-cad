@@ -1,19 +1,19 @@
 # Local AI CAD — 다음 작업
 
-현재 상태: **Phase 1~6 완료**. 제품 기능 우선순위는 Track D의 2D 도면 입력이며, Phase 7 패키징과 복합 가구 정확도 개선 트랙 Q가 뒤따른다.
+현재 상태: **Phase 1~6 및 Track D 구현 완료**. Track D의 합성 회귀·브라우저 경로는 통과했고 실제 사용자 도면 10개 검증만 입력 대기다. Phase 7 패키징과 복합 가구 정확도 개선 트랙 Q가 뒤따른다.
 
 ## 0. Track D — 2D 도면 이미지에서 3D CAD 생성
 
 상세 계약과 완료 기준은 [`docs/track-d-2d-drawing-import-design.md`](docs/track-d-2d-drawing-import-design.md)를 따른다.
 
-- [ ] D0: 실제 도면 10개를 독립 CLI로 정규화·검출·SVG 오버레이·STEP까지 처리해 핵심 위험을 검증한다.
-- [ ] D1: D0 결과로 `SketchDraft`, `ConfirmedProfile`, `DesignSpec 2.0`, `sketch_extrusion` 계약을 확정한다.
-- [ ] D2: 이미지 검증·분석 영역·외곽선·구멍 검출을 구현하고 30개 회귀셋을 만든다.
-- [ ] D3: 동기 analyze/generate API와 임시 파일 정리를 구현한다.
-- [ ] D4: SVG 기반 보정·프로파일 수정·3D 생성 UI를 구현한다.
-- [ ] D5: 실제 브라우저 E2E와 치수·유효 솔리드 완료 기준을 검증한다.
-- [ ] D6: 측정된 필요가 있을 때만 job·SSE·draft 영속성을 추가한다.
-- [ ] D7: MVP 완료 후 사용자 확인형 OCR 치수 후보를 추가한다.
+- [ ] D0 실제 사용자 도면 10개 검증 — 입력 부재. 합성 10개 독립 CLI 검증은 완료.
+- [x] D1: `ConfirmedProfile`, `DesignSpec 2.0`, migration, `sketch_extrusion` 계약을 구현했다.
+- [x] D2: 이미지 검증·분석 영역·외곽선·구멍 검출과 합성 30개 회귀셋을 구현했다.
+- [x] D3: 동기 analyze/generate API와 24시간 임시 analysis 정리를 구현했다.
+- [x] D4: SVG 보정·프로파일 수정·undo/redo·3D 생성 UI를 구현했다.
+- [x] D5: 실제 브라우저 E2E와 합성 30개 치수·유효 솔리드 완료 기준을 검증했다.
+- [x] D6: p95 1.3911초 측정에 따라 job·SSE·draft 영속성을 추가하지 않기로 판정했다.
+- [x] D7: CPU OCR 치수 후보와 사용자 선택·수정·거부 흐름을 구현했다.
 
 일반 제품 사진 복원은 Track D 범위가 아니다. 정면 도면 입력이 안정화된 뒤 별도 Track V로 진행한다.
 
@@ -72,7 +72,7 @@
 
 ## 4. 후속 품질 개선
 
-- [ ] Three.js를 동적 import로 분리해 프론트엔드 번들 경고(약 790KB)를 줄인다.
+- [x] Three.js Viewer를 동적 import로 분리해 앱 핵심 번들을 약 790KB에서 244KB로 줄였다.
 - [ ] API와 프론트엔드에 취소 기능을 추가해 긴 GPU 요청을 중단할 수 있게 한다.
 - [ ] 생성 아티팩트와 오래된 설계 이력의 정리 정책을 추가한다.
 - [ ] 실제 GPU 서버 10회 연속 설계 생성 장시간 테스트를 자동화한다.
