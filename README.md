@@ -7,6 +7,7 @@
 - 앞으로의 체크리스트: `TODO.md`
 - 현재 단계: **Phase 1~6 완료** — API, DesignSpec, CAD 생성, SSE 3D UI, 영속 이력 검증
 - Phase 1 상세 설계: `docs/phase-1-design.md`
+- 2D 도면 이미지 → 3D CAD 설계: `docs/track-d-2d-drawing-import-design.md`
 
 ## MVP 실행
 
@@ -27,8 +28,8 @@ npm.cmd run dev
 DesignSpec → CadQuery → STL/STEP → Three.js 경로를 실제로 실행하며 성능 측정에는 쓰지 않는다.
 
 실제 모델 20문항 평가는 1차 80%, 교정 재시도 포함 90%였다. 상세 결과는
-`experiments/spec_accuracy_report.md`에 있다. 다음 단계는 Phase 7 Docker/WSL2 패키징이며,
-복합 가구 정확도 개선을 위한 트랙 Q(LoRA/모델 교체)는 별도 권장 항목이다.
+`experiments/spec_accuracy_report.md`에 있다. 제품 목표인 도면 이미지 입력은 Track D로
+설계되어 있으며, Docker/WSL2 패키징은 Phase 7, 복합 가구 정확도 개선은 트랙 Q다.
 
 ---
 

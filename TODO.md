@@ -1,8 +1,21 @@
 # Local AI CAD — 다음 작업
 
-현재 상태: **Phase 1~6 완료**. 다음 정식 단계는 Phase 7이며, 복합 가구 정확도 개선은 별도 트랙 Q로 진행한다.
+현재 상태: **Phase 1~6 완료**. 제품 기능 우선순위는 Track D의 2D 도면 입력이며, Phase 7 패키징과 복합 가구 정확도 개선 트랙 Q가 뒤따른다.
 
-## 0. Phase 7 시작 전 공간 확보
+## 0. Track D — 2D 도면 이미지에서 3D CAD 생성
+
+상세 계약과 완료 기준은 [`docs/track-d-2d-drawing-import-design.md`](docs/track-d-2d-drawing-import-design.md)를 따른다.
+
+- [ ] D1: `SketchDraft`, `DesignSpec 2.0`, `sketch_extrusion` 기하 기반을 구현한다.
+- [ ] D2: 이미지 검증·정규화와 외곽선·구멍 검출을 구현하고 30개 평가셋을 만든다.
+- [ ] D3: import job API, SQLite 영속성, SSE, 구조화 오류를 구현한다.
+- [ ] D4: 업로드·보정·프로파일 수정·3D 생성 UI를 구현한다.
+- [ ] D5: 실제 브라우저 E2E와 치수·유효 솔리드 완료 기준을 검증한다.
+- [ ] D6: MVP 완료 후 사용자 확인형 OCR 치수 후보를 추가한다.
+
+일반 제품 사진 복원은 Track D 범위가 아니다. 정면 도면 입력이 안정화된 뒤 별도 Track V로 진행한다.
+
+## 1. Phase 7 시작 전 공간 확보
 
 - [ ] C: 여유 공간을 현재 24.1GB에서 **최소 35GB, 권장 40GB 이상**으로 확보한다.
 - [ ] Docker Desktop의 이미지·빌드 캐시·WSL 가상 디스크 위치를 확인한다.
@@ -10,7 +23,7 @@
 
 예상 추가 사용량은 15~25GB다. 빌드 도중 레이어가 중복되므로 24.1GB 상태에서 바로 시작하지 않는다.
 
-## 1. Phase 7 — Docker/WSL2 GPU 패키징
+## 2. Phase 7 — Docker/WSL2 GPU 패키징
 
 - [ ] WSL2 배포판과 Docker Desktop의 WSL 통합 상태를 확인한다.
 - [ ] 컨테이너에서 NVIDIA GPU가 노출되는지 확인한다.
@@ -44,7 +57,7 @@
 - [ ] 모델 캐시가 이미지에 포함되지 않는다.
 - [ ] 호스트/컨테이너 성능 비교와 이미지 크기가 문서에 남는다.
 
-## 2. 트랙 Q — 복합 가구 정확도 개선
+## 3. 트랙 Q — 복합 가구 정확도 개선
 
 현재 실제 모델 평가 결과는 1차 16/20(80%), 교정 재시도 포함 18/20(90%)다. 네 다리 책상 두 문항에서 중복 부품 ID를 교정하지 못했다.
 
@@ -55,10 +68,9 @@
 - [ ] 20문항 재시도 포함 성공률 목표를 **100%**로 둔다.
 - [ ] 결과가 개선된 경우 `experiments/spec_accuracy_report.md`를 갱신한다.
 
-## 3. 후속 품질 개선
+## 4. 후속 품질 개선
 
 - [ ] Three.js를 동적 import로 분리해 프론트엔드 번들 경고(약 790KB)를 줄인다.
-- [ ] Starlette `TestClient`의 `httpx` 사용 중단 경고에 맞춰 테스트 클라이언트를 교체한다.
 - [ ] API와 프론트엔드에 취소 기능을 추가해 긴 GPU 요청을 중단할 수 있게 한다.
 - [ ] 생성 아티팩트와 오래된 설계 이력의 정리 정책을 추가한다.
 - [ ] 실제 GPU 서버 10회 연속 설계 생성 장시간 테스트를 자동화한다.
@@ -68,3 +80,4 @@
 - Phase 2~6 완료 근거: `docs/phase-2-6-report.md`
 - 실제 모델 정확도: `experiments/spec_accuracy_report.md`
 - 전체 로드맵: `docs/roadmap.md`
+- 2D 도면 입력 설계: `docs/track-d-2d-drawing-import-design.md`
