@@ -13,6 +13,7 @@ dist/
 .cache/
 hf_cache/
 models/
+.local/
 *.safetensors
 *.bin
 *.gguf

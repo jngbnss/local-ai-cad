@@ -6,7 +6,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -133,6 +133,23 @@ class DrawingGenerateResponse(BaseModel):
     spec: DesignSpec
     artifacts: Artifacts
     geometry: GeometryReport
+    request_id: str
+
+class Photo3DHealthResponse(BaseModel):
+    ready: bool
+    model: str
+    device: str | None
+    url: str
+
+
+class Photo3DGenerateResponse(BaseModel):
+    artifact: str
+    provider: Literal["local"]
+    model: str
+    input_views: list[str]
+    generation_seconds: float
+    bytes: int
+    cached: bool
     request_id: str
 
 class HistoryEntry(BaseModel):

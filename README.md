@@ -37,6 +37,29 @@ CPU에서 후보만 제시하며 사용자가 `기준 길이로 사용`을 누�
 교집합을 계산해 편집 가능한 `orthographic_intersection` 설계와 STEP/STL을 만든다.
 현재 베타는 깨끗한 실루엣과 관통 구멍을 지원하며 숨은선·포켓·재투영 비교는 후속 단계다.
 
+**사진 3D · GPU** 탭은 정면과 선택적인 후면·좌측·우측 사진을
+`Hunyuan3D-2mv`에 보내 GLB 삼각형 메시를 만든다. 추론은 `127.0.0.1:8090`의
+별도 로컬 CUDA 프로세스에서 실행되며 Hugging Face Inference API나 사용량을
+소비하지 않는다. 결과는 치수 기반 CAD 솔리드가 아니므로 STEP과 Boolean 편집은
+제공하지 않는다.
+
+```powershell
+# 최초 1회: 별도 venv와 공개 모델 저장소 설치
+.\scripts\setup_hunyuan_local.ps1
+
+# 사진 3D 서버: RTX 4050 6GB 실측 경로
+.\.local\hunyuan3d\.venv\Scripts\python.exe .\scripts\hunyuan_local_server.py `
+  --repo .\.local\hunyuan3d\Hunyuan3D-2
+```
+
+6GB GPU에는 Qwen과 Hunyuan shape 모델을 동시에 상주시킬 여유가 없다. 사진 3D를
+사용할 때는 Qwen 백엔드를 종료한 뒤 `LOCAL_AI_CAD_USE_MOCK=1`로 백엔드만 다시
+실행한다. 사진 생성을 마치면 Hunyuan 서버를 종료하고 실제 Qwen 백엔드를 재시작한다.
+모델 가중치는 최초 한 번만 내려받고 이후 로컬 캐시에서 읽는다.
+
+Hunyuan3D-2 코드와 모델은 Tencent의 **비상업 라이선스** 조건을 따른다. 상용
+서비스에 배포하기 전 원 저장소의 최신 라이선스를 별도로 검토해야 한다.
+
 GPU 모델 없이 전체 흐름만 빠르게 확인하려면 백엔드 실행 전에
 `$env:LOCAL_AI_CAD_USE_MOCK = "1"`을 지정한다. 도면 분석과 CadQuery 생성은 mock이
 아니며 텍스트 설계의 LLM 호출만 mock으로 바뀐다.
@@ -157,6 +180,7 @@ $env:PYTHONPATH = "backend"
 | `LOCAL_AI_CAD_MAX_NEW_TOKENS` | `256` | 무제한 생성 방지 |
 | `LOCAL_AI_CAD_HF_HOME` | 미지정 | 캐시 경로. C: 여유가 부족하면 다른 드라이브로 |
 | `LOCAL_AI_CAD_LOG_LEVEL` | `INFO` | 로그 수준 |
+| `LOCAL_AI_CAD_HUNYUAN_URL` | `http://127.0.0.1:8090` | 별도 로컬 Hunyuan3D shape 서버 |
 
 **디스크 주의**: C: 여유 공간이 약 24 GB다. 모델 캐시는 `~/.cache/huggingface` 에 약 3.7 GB를 쓴다. 여유가 부족하면 `LOCAL_AI_CAD_HF_HOME` 으로 캐시를 다른 드라이브에 둔다.
 

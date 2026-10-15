@@ -305,3 +305,45 @@ def test_multiview_analyze_generate_and_download_step(client):
     assert payload["geometry"]["bounding_box_mm"] == pytest.approx([120, 80, 60], abs=0.01)
     assert payload["geometry"]["is_valid"] is True
     assert client.get(payload["artifacts"]["step"]).status_code == 200
+
+
+def test_photo3d_health_and_local_mesh_contract(client, monkeypatch):
+    from app.api.v1 import routes
+
+    monkeypatch.setattr(
+        routes,
+        "photo3d_health",
+        lambda: {
+            "ready": True,
+            "model": "tencent/Hunyuan3D-2mv",
+            "device": "NVIDIA test GPU",
+            "url": "http://127.0.0.1:8090",
+        },
+    )
+    monkeypatch.setattr(
+        routes,
+        "generate_photo_mesh",
+        lambda images, _artifact_dir: {
+            "artifact": "/api/v1/artifacts/photo3d-test.glb",
+            "provider": "local",
+            "model": "tencent/Hunyuan3D-2mv",
+            "input_views": list(images),
+            "generation_seconds": 1.25,
+            "bytes": 12,
+            "cached": False,
+        },
+    )
+
+    health = client.get("/api/v1/photo3d/health")
+    assert health.status_code == 200
+    assert health.json()["ready"] is True
+
+    generated = client.post(
+        "/api/v1/photo3d/generate",
+        files={"front": ("front.png", _rectangle_png(120, 180), "image/png")},
+    )
+    assert generated.status_code == 200
+    payload = generated.json()
+    assert payload["provider"] == "local"
+    assert payload["input_views"] == ["front"]
+    assert payload["artifact"].endswith(".glb")

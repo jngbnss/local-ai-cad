@@ -72,12 +72,20 @@
 - 사진성 입력 차단, SQLite 이력, Three.js 미리보기, STEP/STL 다운로드 연결
 - 뷰별 crop·기준점 축척, 재투영 IoU, 숨은선·포켓, 실제 3면도 10세트는 미구현
 
+### Track P — 로컬 GPU 사진 3D 메시
+
+- `C:\3-design`의 검증된 다중 뷰 계약을 기반으로 정면 필수, 후면·좌측·우측 선택 업로드 추가
+- 불투명 사진의 단색 배경 분리, 로컬 Hunyuan3D-2mv 호출, 콘텐츠 주소 GLB 캐시 추가
+- Three.js GLB 로딩과 Y-up 표시, GLB 다운로드, 메시/CAD 구분 문구 추가
+- RTX 4050 6GB 실제 CUDA 생성: 98.086초, 2,742,784바이트 GLB
+- Qwen과 Hunyuan 동시 상주는 지원하지 않으며 Hunyuan3D 비상업 라이선스를 적용
+
 ## 2. 현재 검증 상태
 
-- 백엔드 테스트: **66개 통과**
+- 백엔드 테스트: **70개 통과**
 - 프론트엔드 TypeScript 검사 및 프로덕션 빌드: 통과
 - Track D 합성 회귀: analyze → confirm → CAD → STEP **30/30**
-- 실제 Edge 브라우저: 자연어 v2 수정과 사진 차단, 3면 업로드→분석→120×80×60mm 유효 CAD→STEP 경로 통과
+- 실제 Edge 브라우저: 자연어/2D/3면 경로와 사진 4장→로컬 GPU GLB→Three.js 표시·다운로드, 런타임 오류 없음
 - 작업 브랜치: `main`
 
 관련 문서:
@@ -88,6 +96,8 @@
 - `docs/track-d-checklist.md`
 - `docs/track-v-cad-reverse-engineering-design.md`
 - `docs/track-v-checklist.md`
+- `docs/photo3d-local-checklist.md`
+- `docs/photo3d-local-errors.md`
 - `experiments/drawing-e2e/report.md`
 
 ## 3. 실행 방법

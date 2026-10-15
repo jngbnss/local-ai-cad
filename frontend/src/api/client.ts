@@ -78,7 +78,7 @@ export interface DesignSpec {
   parts: Part[];
   operations: Operation[];
   source: {
-    kind: "text" | "drawing_import";
+    kind: "text" | "drawing_import" | "multiview_import";
     analysis_id: string | null;
   };
 }
@@ -243,6 +243,26 @@ export interface DrawingGenerateResponse {
   request_id: string;
 }
 
+export type Photo3DView = "front" | "back" | "left" | "right";
+
+export interface Photo3DHealth {
+  ready: boolean;
+  model: string;
+  device: string | null;
+  url: string;
+}
+
+export interface Photo3DResult {
+  artifact: string;
+  provider: "local";
+  model: string;
+  input_views: Photo3DView[];
+  generation_seconds: number;
+  bytes: number;
+  cached: boolean;
+  request_id: string;
+}
+
 /**
  * 오류 분류.
  *
@@ -270,6 +290,9 @@ export type ApiErrorType =
   | "analysis_not_found"
   | "invalid_analysis_region"
   | "multiview_invalid"
+  | "photo3d_invalid"
+  | "photo3d_unavailable"
+  | "photo3d_generation_failed"
   | "network"
   | "unknown";
 
@@ -293,6 +316,9 @@ const KNOWN_ERROR_TYPES: readonly ApiErrorType[] = [
   "analysis_not_found",
   "invalid_analysis_region",
   "multiview_invalid",
+  "photo3d_invalid",
+  "photo3d_unavailable",
+  "photo3d_generation_failed",
 ];
 
 export class ApiError extends Error {
@@ -366,6 +392,9 @@ const FALLBACK_MESSAGE: Record<ApiErrorType, string> = {
   analysis_not_found: "도면 분석 결과가 만료됐습니다. 이미지를 다시 분석해 주세요.",
   invalid_analysis_region: "분석 영역 좌표가 올바르지 않습니다.",
   multiview_invalid: "3면도의 투상법, 축척 또는 뷰 대응이 올바르지 않습니다.",
+  photo3d_invalid: "사진 방향 또는 배경 분리 결과가 올바르지 않습니다.",
+  photo3d_unavailable: "로컬 Hunyuan3D 서버가 실행 중이 아닙니다.",
+  photo3d_generation_failed: "로컬 GPU에서 사진 3D 메시 생성에 실패했습니다.",
   network: "백엔드에 연결할 수 없습니다.",
   unknown: "백엔드가 요청을 처리하지 못했습니다.",
 };
@@ -484,6 +513,27 @@ export function generateMultiview(payload: {
   height: number;
 }): Promise<DrawingGenerateResponse> {
   return postJson<DrawingGenerateResponse>(`${BASE}/multiview/generate`, payload);
+}
+
+export function photo3dHealth(): Promise<Photo3DHealth> {
+  return request<Photo3DHealth>(`${BASE}/photo3d/health`);
+}
+
+export function generatePhoto3D(images: Partial<Record<Photo3DView, File>>): Promise<Photo3DResult> {
+  if (!images.front) {
+    return Promise.reject(
+      new ApiError("정면 사진이 필요합니다.", { errorType: "photo3d_invalid", status: 0 }),
+    );
+  }
+  const body = new FormData();
+  for (const name of ["front", "back", "left", "right"] as const) {
+    const image = images[name];
+    if (image) body.append(name, image);
+  }
+  return request<Photo3DResult>(`${BASE}/photo3d/generate`, {
+    method: "POST",
+    body,
+  });
 }
 
 export type DesignStage = "llm" | "geometry";

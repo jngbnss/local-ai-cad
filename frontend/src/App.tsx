@@ -14,15 +14,17 @@ import type {
   DrawingGenerateResponse,
   HealthResponse,
   HistoryEntry,
+  Photo3DResult,
 } from "./api/client";
 import { DrawingPanel } from "./components/DrawingPanel";
 import { MultiviewPanel } from "./components/MultiviewPanel";
+import { Photo3DPanel } from "./components/Photo3DPanel";
 import { HistoryPanel } from "./components/HistoryPanel";
 
 const Viewer = lazy(() => import("./components/Viewer").then((module) => ({ default: module.Viewer })));
 
 type Stage = "idle" | "llm" | "geometry" | "done";
-type InputMode = "text" | "drawing" | "multiview";
+type InputMode = "text" | "drawing" | "multiview" | "photo3d";
 
 const ERROR_GUIDE: Record<string, string> = {
   cuda_unavailable: "CUDA와 그래픽 드라이버 상태를 확인해 주세요.",
@@ -38,6 +40,9 @@ const ERROR_GUIDE: Record<string, string> = {
   analysis_not_found: "분석 결과가 만료됐습니다. 이미지를 다시 분석해 주세요.",
   invalid_analysis_region: "폭과 높이가 있는 영역을 다시 선택해 주세요.",
   multiview_invalid: "정면·평면·우측면 역할과 공통 X/Y/Z 치수를 확인해 주세요.",
+  photo3d_invalid: "사진 방향과 배경 대비를 확인해 주세요.",
+  photo3d_unavailable: "8090 포트의 로컬 Hunyuan3D 서버를 먼저 실행해 주세요.",
+  photo3d_generation_failed: "다른 GPU 모델과 GPU 앱을 종료한 뒤 다시 시도해 주세요.",
   network: "백엔드가 127.0.0.1:8000에서 실행 중인지 확인해 주세요.",
   unknown: "백엔드 로그에서 요청 ID와 상세 오류를 확인해 주세요.",
 };
@@ -51,6 +56,7 @@ export default function App() {
   const [prompt, setPrompt] = useState("가로 1200mm, 깊이 600mm, 높이 750mm인 책상을 만들어줘. 상판 두께는 25mm이고 다리는 4개야.");
   const [revision, setRevision] = useState("");
   const [result, setResult] = useState<DesignResponse | DrawingGenerateResponse | null>(null);
+  const [photoResult, setPhotoResult] = useState<Photo3DResult | null>(null);
   const [historyEntries, setHistoryEntries] = useState<HistoryEntry[]>([]);
   const [stage, setStage] = useState<Stage>("idle");
   const [error, setError] = useState<ApiError | null>(null);
@@ -77,6 +83,7 @@ export default function App() {
     setStage("llm");
     try {
       const created = await createDesignStream(prompt.trim(), (nextStage) => setStage(nextStage));
+      setPhotoResult(null);
       setResult(created);
       await refreshHistory(created.design_id);
       setStage("done");
@@ -116,6 +123,7 @@ export default function App() {
 
   async function acceptDrawing(created: DrawingGenerateResponse) {
     setError(null);
+    setPhotoResult(null);
     setResult(created);
     await refreshHistory(created.design_id);
     setStage("done");
@@ -129,7 +137,16 @@ export default function App() {
     setResult(null);
     setHistoryEntries([]);
     setError(null);
+    setPhotoResult(null);
     setStage("idle");
+  }
+
+  function acceptPhoto(created: Photo3DResult) {
+    setError(null);
+    setResult(null);
+    setHistoryEntries([]);
+    setPhotoResult(created);
+    setStage("done");
   }
 
   const busy = stage === "llm" || stage === "geometry";
@@ -154,6 +171,7 @@ export default function App() {
             <button type="button" className={mode === "text" ? "is-active" : ""} onClick={() => setMode("text")}>텍스트 설계</button>
             <button type="button" className={mode === "drawing" ? "is-active" : ""} onClick={() => setMode("drawing")}>2D 도면 가져오기</button>
             <button type="button" className={mode === "multiview" ? "is-active" : ""} onClick={() => setMode("multiview")}>3면 CAD 복원</button>
+            <button type="button" className={mode === "photo3d" ? "is-active" : ""} onClick={() => setMode("photo3d")}>사진 3D · GPU</button>
           </nav>
           <section className="intro">
             <span className="eyebrow">PRIVATE · GPU LOCAL</span>
@@ -184,8 +202,10 @@ export default function App() {
             </>
           ) : mode === "drawing" ? (
             <DrawingPanel onGenerated={acceptDrawing} onError={showError} onReset={resetDrawing} />
-          ) : (
+          ) : mode === "multiview" ? (
             <MultiviewPanel onGenerated={acceptDrawing} onError={showError} onReset={resetDrawing} />
+          ) : (
+            <Photo3DPanel onGenerated={acceptPhoto} onError={showError} onReset={resetDrawing} />
           )}
           {result && (
             <form className="revision-card" onSubmit={revise}>
@@ -208,7 +228,10 @@ export default function App() {
 
         <section className="result-column">
           <Suspense fallback={<div className="viewer viewer-loading">3D 뷰어 불러오는 중…</div>}>
-            <Viewer url={result ? artifactUrl(result.artifacts.stl) : null} label={result?.spec.name ?? "3D 미리보기"} />
+            <Viewer
+              url={result ? artifactUrl(result.artifacts.stl) : photoResult ? artifactUrl(photoResult.artifact) : null}
+              label={result?.spec.name ?? (photoResult ? "로컬 GPU 사진 3D 메시" : "3D 미리보기")}
+            />
           </Suspense>
           {result && (
             <div className="result-strip">
@@ -219,6 +242,13 @@ export default function App() {
                 <a href={artifactUrl(result.artifacts.stl)} download>STL</a>
                 <a className="download-primary" href={artifactUrl(result.artifacts.step)} download>STEP ↓</a>
               </div>
+            </div>
+          )}
+          {photoResult && (
+            <div className="result-strip">
+              <div><span className="eyebrow">LOCAL GPU MESH</span><strong>Hunyuan3D-2mv 결과</strong><small>{photoResult.input_views.join(" · ")} · {(photoResult.bytes / 1_000_000).toFixed(1)}MB</small></div>
+              <div className="metric"><span>생성</span><strong>{formatSeconds(photoResult.generation_seconds)}</strong></div>
+              <div className="downloads"><a className="download-primary" href={artifactUrl(photoResult.artifact)} download>GLB ↓</a></div>
             </div>
           )}
 

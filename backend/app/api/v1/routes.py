@@ -34,6 +34,8 @@ from app.api.schemas import (
     HealthResponse,
     MultiviewAnalyzeResponse,
     MultiviewGenerateRequest,
+    Photo3DGenerateResponse,
+    Photo3DHealthResponse,
     HistoryEntry,
     HistoryResponse,
     Metrics,
@@ -58,6 +60,11 @@ from app.multiview.service import (
     build_spec as build_multiview_spec,
     create_analysis as create_multiview_analysis,
     get_analysis as get_multiview_analysis,
+)
+from app.photo3d.service import (
+    VIEW_NAMES as PHOTO3D_VIEW_NAMES,
+    generate_mesh as generate_photo_mesh,
+    health as photo3d_health,
 )
 
 logger = logging.getLogger(__name__)
@@ -440,6 +447,42 @@ async def generate_multiview(
         geometry=geometry,
         request_id=_request_id(),
     )
+
+@router.get("/photo3d/health", response_model=Photo3DHealthResponse)
+async def photo3d_status() -> Photo3DHealthResponse:
+    return Photo3DHealthResponse(**(await run_in_threadpool(photo3d_health)))
+
+
+@router.post("/photo3d/generate", response_model=Photo3DGenerateResponse)
+async def generate_photo3d(
+    request: Request,
+    front: UploadFile = File(...),
+    back: UploadFile | None = File(default=None),
+    left: UploadFile | None = File(default=None),
+    right: UploadFile | None = File(default=None),
+) -> Photo3DGenerateResponse:
+    uploads = {"front": front, "back": back, "left": left, "right": right}
+    images = {
+        name: await upload.read(MAX_FILE_BYTES + 1)
+        for name, upload in uploads.items()
+        if upload is not None
+    }
+    if any(name not in PHOTO3D_VIEW_NAMES for name in images):
+        raise ApiError("photo3d_invalid", "지원하지 않는 사진 방향입니다.", status=422)
+    try:
+        result = await run_in_threadpool(
+            generate_photo_mesh,
+            images,
+            _state(request).artifact_dir,
+        )
+    except ConnectionError as exc:
+        raise ApiError("photo3d_unavailable", str(exc), status=503) from exc
+    except RuntimeError as exc:
+        status = 507 if "메모리" in str(exc) else 502
+        raise ApiError("photo3d_generation_failed", str(exc), status=status) from exc
+    except ValueError as exc:
+        raise ApiError("photo3d_invalid", str(exc), status=422) from exc
+    return Photo3DGenerateResponse(**result, request_id=_request_id())
 
 
 @router.get("/artifacts/{filename}")

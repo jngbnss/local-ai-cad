@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { STLLoader } from "three/examples/jsm/loaders/STLLoader.js";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
 interface ViewerProps {
   url: string | null;
@@ -20,7 +21,7 @@ export function Viewer({ url, label = "3D 미리보기" }: ViewerProps) {
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x101316);
     const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100000);
-    camera.up.set(0, 0, 1);
+    camera.up.set(0, url.toLowerCase().endsWith(".glb") ? 1 : 0, url.toLowerCase().endsWith(".glb") ? 0 : 1);
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -39,7 +40,7 @@ export function Viewer({ url, label = "3D 미리보기" }: ViewerProps) {
     fill.position.set(-4, 2, 3);
     scene.add(fill);
 
-    let mesh: THREE.Mesh | null = null;
+    let object: THREE.Object3D | null = null;
     let frame = 0;
     let disposed = false;
 
@@ -55,39 +56,51 @@ export function Viewer({ url, label = "3D 미리보기" }: ViewerProps) {
     observer.observe(host);
     resize();
 
-    new STLLoader().load(
-      url,
-      (geometry) => {
-        if (disposed) {
-          geometry.dispose();
-          return;
-        }
-        geometry.computeVertexNormals();
-        geometry.computeBoundingBox();
-        const box = geometry.boundingBox;
-        if (!box) return;
-        const center = box.getCenter(new THREE.Vector3());
-        const size = box.getSize(new THREE.Vector3());
-        const longest = Math.max(size.x, size.y, size.z, 1);
-        geometry.translate(-center.x, -center.y, -center.z);
-        const material = new THREE.MeshStandardMaterial({
-          color: 0xf2a65a,
-          roughness: 0.48,
-          metalness: 0.08,
-        });
-        mesh = new THREE.Mesh(geometry, material);
-        mesh.castShadow = true;
-        scene.add(mesh);
-        camera.position.set(longest * 1.4, -longest * 1.8, longest * 1.25);
-        camera.near = longest / 1000;
-        camera.far = longest * 100;
-        camera.updateProjectionMatrix();
-        controls.target.set(0, 0, 0);
-        controls.update();
-      },
-      undefined,
-      (error) => setLoadError(error instanceof Error ? error.message : "STL을 불러오지 못했습니다."),
-    );
+    function frameObject(root: THREE.Object3D) {
+      if (disposed) return;
+      const box = new THREE.Box3().setFromObject(root);
+      const center = box.getCenter(new THREE.Vector3());
+      const size = box.getSize(new THREE.Vector3());
+      const longest = Math.max(size.x, size.y, size.z, 1);
+      root.position.sub(center);
+      object = root;
+      scene.add(root);
+      const up = camera.up.y === 1;
+      camera.position.set(longest * 1.4, up ? longest * 1.25 : -longest * 1.8, up ? longest * 1.8 : longest * 1.25);
+      camera.near = longest / 1000;
+      camera.far = longest * 100;
+      camera.updateProjectionMatrix();
+      controls.target.set(0, 0, 0);
+      controls.update();
+    }
+
+    const onLoadError = (caught: unknown) => {
+      setLoadError(caught instanceof Error ? caught.message : "3D 파일을 불러오지 못했습니다.");
+    };
+    if (url.toLowerCase().endsWith(".glb")) {
+      new GLTFLoader().load(url, (gltf) => frameObject(gltf.scene), undefined, onLoadError);
+    } else {
+      new STLLoader().load(
+        url,
+        (geometry) => {
+          if (disposed) {
+            geometry.dispose();
+            return;
+          }
+          geometry.computeVertexNormals();
+          const material = new THREE.MeshStandardMaterial({
+            color: 0xf2a65a,
+            roughness: 0.48,
+            metalness: 0.08,
+          });
+          const mesh = new THREE.Mesh(geometry, material);
+          mesh.castShadow = true;
+          frameObject(mesh);
+        },
+        undefined,
+        onLoadError,
+      );
+    }
 
     function animate() {
       controls.update();
@@ -101,10 +114,12 @@ export function Viewer({ url, label = "3D 미리보기" }: ViewerProps) {
       cancelAnimationFrame(frame);
       observer.disconnect();
       controls.dispose();
-      if (mesh) {
-        mesh.geometry.dispose();
-        (mesh.material as THREE.Material).dispose();
-      }
+      object?.traverse((child) => {
+        if (!(child instanceof THREE.Mesh)) return;
+        child.geometry.dispose();
+        const materials = Array.isArray(child.material) ? child.material : [child.material];
+        materials.forEach((material) => material.dispose());
+      });
       renderer.dispose();
       renderer.domElement.remove();
     };
