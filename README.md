@@ -8,6 +8,8 @@
 - 현재 단계: **Phase 1~6 완료** — API, DesignSpec, CAD 생성, SSE 3D UI, 영속 이력 검증
 - Phase 1 상세 설계: `docs/phase-1-design.md`
 - 2D 도면 이미지 → 3D CAD 설계: `docs/track-d-2d-drawing-import-design.md`
+- Track D 단계별 검증: `docs/track-d-checklist.md`
+- Track D 오류 기록: `docs/track-d-errors.md`
 
 ## MVP 실행
 
