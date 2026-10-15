@@ -14,7 +14,7 @@ import json
 import uuid
 from pathlib import Path
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, File, Form, Request, UploadFile
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import FileResponse, StreamingResponse
 
@@ -23,6 +23,9 @@ from app.api.errors import ApiError, error_payload
 from app.api.schemas import (
     Artifacts,
     DesignRequest,
+    DrawingAnalyzeResponse,
+    DrawingGenerateRequest,
+    DrawingGenerateResponse,
     DesignResponse,
     DiffEntry,
     GenerateRequest,
@@ -41,6 +44,13 @@ from app.cad.validate import validate_solid
 from app.design.history import DesignVersion
 from app.design.schema import DesignSpec
 from app.design.validator import generate_spec, revise_spec
+from app.drawing.analyzer import (
+    MAX_FILE_BYTES,
+    AnalysisRegion,
+    analyze_image,
+    overlay_svg,
+)
+from app.drawing.store import cleanup_analyses, create_analysis, get_analysis
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1")
@@ -226,6 +236,113 @@ async def design_version(request: Request, design_id: str, version: int) -> Vers
         version=record.version,
         spec=record.spec,
         artifacts=artifacts,
+    )
+
+
+@router.post("/drawing/analyze", response_model=DrawingAnalyzeResponse)
+async def analyze_drawing(
+    request: Request,
+    image: UploadFile = File(...),
+    x: int | None = Form(default=None),
+    y: int | None = Form(default=None),
+    width: int | None = Form(default=None),
+    height: int | None = Form(default=None),
+) -> DrawingAnalyzeResponse:
+    values = (x, y, width, height)
+    if any(value is not None for value in values) and not all(
+        value is not None for value in values
+    ):
+        raise ApiError(
+            "invalid_analysis_region",
+            "analysis region은 x, y, width, height를 모두 보내야 합니다.",
+            status=422,
+        )
+    data = await image.read(MAX_FILE_BYTES + 1)
+    region = (
+        AnalysisRegion(x=x, y=y, width=width, height=height)
+        if all(value is not None for value in values)
+        else None
+    )
+    state = _state(request)
+    root = state.artifact_dir / "drawing-analyses"
+
+    def analyze_and_store():
+        cleanup_analyses(root)
+        detected = analyze_image(data, region=region)
+        profile = detected.as_dict()
+        stored = create_analysis(
+            root,
+            normalized_png=detected.normalized_png,
+            overlay=overlay_svg(detected),
+            profile=profile,
+        )
+        return stored, profile
+
+    stored, profile = await run_in_threadpool(analyze_and_store)
+    base = f"/api/v1/drawing/analyses/{stored.analysis_id}"
+    return DrawingAnalyzeResponse(
+        analysis_id=stored.analysis_id,
+        image_url=f"{base}/image",
+        overlay_url=f"{base}/overlay",
+        profile=profile,
+    )
+
+
+@router.get("/drawing/analyses/{analysis_id}/{asset}")
+async def drawing_analysis_asset(
+    request: Request, analysis_id: str, asset: str
+) -> FileResponse:
+    stored = get_analysis(_state(request).artifact_dir / "drawing-analyses", analysis_id)
+    if stored is None:
+        raise ApiError("analysis_not_found", "도면 분석 결과가 없습니다.", status=404)
+    if asset == "image":
+        return FileResponse(stored.image_path, media_type="image/png")
+    if asset == "overlay":
+        return FileResponse(stored.overlay_path, media_type="image/svg+xml")
+    raise ApiError("analysis_asset_not_found", "지원하지 않는 분석 파일입니다.", status=404)
+
+
+@router.post("/drawing/generate", response_model=DrawingGenerateResponse)
+async def generate_drawing(
+    request: Request, body: DrawingGenerateRequest
+) -> DrawingGenerateResponse:
+    state = _state(request)
+    stored = get_analysis(
+        state.artifact_dir / "drawing-analyses", body.analysis_id
+    )
+    if stored is None:
+        raise ApiError("analysis_not_found", "도면 분석 결과가 없습니다.", status=404)
+    spec = DesignSpec.model_validate(
+        {
+            "schema_version": "2.0",
+            "name": body.name,
+            "source": {
+                "kind": "drawing_import",
+                "analysis_id": body.analysis_id,
+            },
+            "parts": [
+                {
+                    "id": "drawing-body",
+                    "primitive": "sketch_extrusion",
+                    "profile": body.profile.model_dump(mode="json"),
+                    "depth": body.depth,
+                    "position": {},
+                }
+            ],
+            "operations": [],
+        }
+    )
+    record = await run_in_threadpool(
+        state.history.create, spec, f"drawing:{body.analysis_id}"
+    )
+    geometry, artifacts = await run_in_threadpool(_materialise, state, record)
+    return DrawingGenerateResponse(
+        design_id=record.design_id,
+        version=record.version,
+        spec=record.spec,
+        artifacts=artifacts,
+        geometry=geometry,
+        request_id=_request_id(),
     )
 
 

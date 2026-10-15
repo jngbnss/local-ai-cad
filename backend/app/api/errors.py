@@ -23,6 +23,13 @@ from app.cad.errors import BooleanFailedError, ExportError, GeometryError, Solid
 from app.config import ConfigError
 from app.design.history import DesignNotFoundError, HistoryError, VersionNotFoundError
 from app.design.validator import SpecGenerationError
+from app.drawing.errors import (
+    DrawingError,
+    ImageTooLargeError,
+    ProfileDetectionError,
+    ProfileInvalidError,
+    UnsupportedImageError,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +48,10 @@ _MAPPING: tuple[tuple[type[Exception], str, int], ...] = (
     (TorchNotInstalledError, "torch_missing", 503),
     (GpuOutOfMemoryError, "oom", 507),
     (ModelDownloadError, "model_download_failed", 502),
+    (ImageTooLargeError, "image_too_large", 413),
+    (UnsupportedImageError, "image_unsupported", 415),
+    (ProfileDetectionError, "profile_detection_failed", 422),
+    (ProfileInvalidError, "profile_invalid", 422),
     (SpecGenerationError, "schema_invalid", 422),
     (SolidInvalidError, "geometry_invalid", 422),
     (BooleanFailedError, "geometry_failed", 422),
@@ -97,6 +108,12 @@ def register_error_handlers(app: FastAPI) -> None:
             status_code=exc.status,
             content={"error_type": exc.error_type, "message": exc.message, "detail": None},
         )
+
+    @app.exception_handler(DrawingError)
+    async def _drawing_error(_request: Request, exc: DrawingError) -> JSONResponse:
+        content, status = error_payload(exc)
+        logger.warning("%s: %s", content["error_type"], exc)
+        return JSONResponse(status_code=status, content=content)
 
     @app.exception_handler(Exception)
     async def _unhandled(_request: Request, exc: Exception) -> JSONResponse:

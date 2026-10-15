@@ -40,12 +40,12 @@
 
 ## D3 — 동기 API
 
-- [ ] `POST /api/v1/drawing/analyze`가 multipart 이미지를 분석한다.
-- [ ] 정규화 이미지를 안전한 analysis ID로 조회한다.
-- [ ] `POST /api/v1/drawing/generate`가 확인된 mm profile만 받는다.
-- [ ] OpenCV가 event loop 밖 threadpool에서 실행된다.
-- [ ] 이미지·프로파일·기하·export 오류가 서로 다른 API 오류다.
-- [ ] 임시 analysis 파일이 정리된다.
+- [x] `POST /api/v1/drawing/analyze`가 multipart 이미지를 분석한다.
+- [x] 정규화 이미지를 안전한 analysis ID로 조회한다.
+- [x] `POST /api/v1/drawing/generate`가 확인된 mm profile만 받는다.
+- [x] OpenCV가 event loop 밖 threadpool에서 실행된다.
+- [x] 이미지·프로파일·기하·export 오류가 서로 다른 API 오류다.
+- [x] 임시 analysis 파일을 TTL로 정리한다.
 
 ## D4 — SVG UI
 

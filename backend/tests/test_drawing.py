@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from io import BytesIO
 import json
+import os
 from pathlib import Path
 
 import pytest
@@ -14,6 +15,7 @@ from app.drawing.analyzer import AnalysisRegion, analyze_image, analyze_path, ov
 from app.drawing.errors import ProfileInvalidError, UnsupportedImageError
 from app.drawing.fixtures import generate_suite
 from app.drawing.prototype import build_prototype_solid, confirmed_profile, export_step
+from app.drawing.store import cleanup_analyses
 
 
 def test_ten_drawing_spike_cases_produce_valid_step(tmp_path: Path):
@@ -175,3 +177,19 @@ def test_decodable_but_unsupported_gif_is_rejected():
 
     with pytest.raises(UnsupportedImageError, match="PNG, JPEG 또는 WebP"):
         analyze_image(stream.getvalue())
+
+
+def test_analysis_cleanup_only_removes_expired_valid_ids(tmp_path):
+    expired = tmp_path / ("a" * 32)
+    current = tmp_path / ("b" * 32)
+    unrelated = tmp_path / "keep-me"
+    for directory in (expired, current, unrelated):
+        directory.mkdir()
+    os.utime(expired, (100, 100))
+
+    removed = cleanup_analyses(tmp_path, ttl_seconds=100, now=201)
+
+    assert removed == 1
+    assert not expired.exists()
+    assert current.exists()
+    assert unrelated.exists()

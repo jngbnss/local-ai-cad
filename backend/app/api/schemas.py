@@ -6,9 +6,11 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.design.schema import DesignSpec
+from app.design.schema import DesignSpec, SketchProfile
 
 
 class Metrics(BaseModel):
@@ -90,6 +92,31 @@ class DesignResponse(BaseModel):
     diff: list[DiffEntry] = Field(default_factory=list)
     request_id: str
 
+
+
+class DrawingAnalyzeResponse(BaseModel):
+    analysis_id: str
+    image_url: str
+    overlay_url: str
+    profile: dict[str, Any]
+
+
+class DrawingGenerateRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    analysis_id: str = Field(pattern=r"^[a-f0-9]{32}$")
+    name: str = Field(min_length=1, max_length=120)
+    profile: SketchProfile
+    depth: float = Field(ge=0.1, le=10_000.0)
+
+
+class DrawingGenerateResponse(BaseModel):
+    design_id: str
+    version: int
+    spec: DesignSpec
+    artifacts: Artifacts
+    geometry: GeometryReport
+    request_id: str
 
 class HistoryEntry(BaseModel):
     version: int

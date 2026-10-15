@@ -10,6 +10,8 @@
 | BASE-004 | 환경 | 관리됨 | RTX 4050 6GB에서 다른 GPU 프로세스가 모델과 VRAM 경합 가능 | 단일 추론 lock 유지. 이미지/OCR은 CPU 실행 |
 | D0-INPUT-001 | D0 | 미충족 | 실제 사용자가 제공한 도면 이미지 10개가 저장소와 대화에 없음 | 합성 10개와 회귀 30개로 구현 경로를 검증하되 실제 도면 완료 조건은 별도 미완료로 유지 |
 | D0-002 | D0 | 관리됨 | 굵은 외곽선 입력에서 내부 contour가 큰 hole처럼 검출됨 | 면적비 0.65 이상 child를 hole로 확정하지 않고 `double_contour_suspected` 경고. 합성 케이스는 유효 STEP 생성 |
+| D3-001 | D3 | 해결 | `Exception` fallback handler만 등록했을 때 TestClient가 `UnsupportedImageError` 응답 후 예외를 재발생 | `DrawingError` 전용 handler를 등록하고 415 구조화 응답 회귀 테스트 통과 |
+| D3-TOOL-001 | D3 | 해결 | Bash 서비스 명령에 Windows 역슬래시 경로를 써 실행 파일을 찾지 못함 | POSIX 형식 `.venv/Scripts/python.exe`로 재실행; 제품 코드 영향 없음 |
 
 ## 단계별 추가 규칙
 
