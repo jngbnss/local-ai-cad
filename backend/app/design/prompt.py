@@ -33,13 +33,13 @@ SYSTEM_PROMPT = """너는 CAD 설계 명세를 JSON으로 만드는 도구다.
 - JSON은 공백과 줄바꿈을 최소화해 짧게 출력한다.
 
 출력 형식:
-{"schema_version":"1.0","unit":"mm","name":"<영문 소문자 이름>","parts":[...],"operations":[...]}"""
+{"schema_version":"2.0","unit":"mm","name":"<영문 소문자 이름>","parts":[...],"operations":[...]}"""
 
 FEW_SHOT_USER = "가로 80cm 세로 40cm 높이 75cm 사이드 테이블 만들어줘"
 
 FEW_SHOT_ASSISTANT = json.dumps(
     {
-        "schema_version": "1.0",
+        "schema_version": "2.0",
         "unit": "mm",
         "name": "side_table",
         "parts": [

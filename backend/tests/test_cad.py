@@ -13,7 +13,7 @@ from app.cad.validate import TOLERANCE_MM, validate_solid
 from app.design.schema import DesignSpec
 
 DESK = {
-    "schema_version": "1.0",
+    "schema_version": "2.0",
     "unit": "mm",
     "name": "desk",
     "parts": [
@@ -55,7 +55,7 @@ DESK = {
 
 # 100mm 정육면체에 지름 40mm 구멍을 관통시킨다.
 PLATE_AND_HOLE = {
-    "schema_version": "1.0",
+    "schema_version": "2.0",
     "unit": "mm",
     "name": "plate-with-hole",
     "parts": [
@@ -131,7 +131,7 @@ def test_cut_that_annihilates_the_solid_raises_geometry_error():
     # OCP 는 이 경우 예외 대신 빈 Compound 를 돌려준다. 조용히 넘어가면 안 된다.
     spec = DesignSpec.model_validate(
         {
-            "schema_version": "1.0",
+            "schema_version": "2.0",
             "unit": "mm",
             "name": "swallowed",
             "parts": [

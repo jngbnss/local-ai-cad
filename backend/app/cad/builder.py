@@ -18,7 +18,15 @@ from __future__ import annotations
 import cadquery as cq
 
 from app.cad.errors import BooleanFailedError
-from app.design.schema import BooleanOp, DesignSpec, Operation, Part, Primitive
+from app.design.schema import (
+    BooleanOp,
+    BoxPart,
+    CylinderPart,
+    DesignSpec,
+    Operation,
+    Part,
+    SketchExtrusionPart,
+)
 
 
 def build_solid(spec: DesignSpec) -> cq.Workplane:
@@ -40,21 +48,47 @@ def build_solid(spec: DesignSpec) -> cq.Workplane:
 
 def _build_part(part: Part) -> cq.Workplane:
     """부품 하나를 바닥면 중심 규약으로 만든다."""
-    dims = part.dimensions
     position = (part.position.x, part.position.y, part.position.z)
     try:
-        if part.primitive is Primitive.BOX:
+        if isinstance(part, BoxPart):
+            dims = part.dimensions
             shape = cq.Workplane("XY").box(
-                float(dims.x), float(dims.y), float(dims.z), centered=(True, True, False)
+                dims.x, dims.y, dims.z, centered=(True, True, False)
             )
-        else:
+        elif isinstance(part, CylinderPart):
+            dims = part.dimensions
             shape = cq.Workplane("XY").cylinder(
-                float(dims.height), float(dims.radius), centered=(True, True, False)
+                dims.height, dims.radius, centered=(True, True, False)
             )
+        elif isinstance(part, SketchExtrusionPart):
+            shape = (
+                cq.Workplane("XY")
+                .polyline([(float(x), float(y)) for x, y in part.profile.outer])
+                .close()
+                .extrude(part.depth)
+            )
+            for hole in part.profile.holes:
+                if hole.kind == "circle":
+                    cutter = (
+                        cq.Workplane("XY")
+                        .center(hole.center[0], hole.center[1])
+                        .circle(hole.radius)
+                        .extrude(part.depth)
+                    )
+                else:
+                    cutter = (
+                        cq.Workplane("XY")
+                        .polyline([(float(x), float(y)) for x, y in hole.points])
+                        .close()
+                        .extrude(part.depth)
+                    )
+                shape = shape.cut(cutter)
+        else:  # pragma: no cover - Pydantic 판별 공용체가 차단한다.
+            raise TypeError(f"지원하지 않는 part 타입입니다: {type(part).__name__}")
         return shape.translate(position)
     except Exception as exc:  # noqa: BLE001 - OCP 예외 타입이 공개 계약이 아니다.
         raise BooleanFailedError(
-            f"부품 '{part.id}'({part.primitive.value}) 를 만들지 못했습니다: {exc}"
+            f"부품 '{part.id}'({part.primitive}) 를 만들지 못했습니다: {exc}"
         ) from exc
 
 

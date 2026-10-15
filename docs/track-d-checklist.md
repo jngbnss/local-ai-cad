@@ -22,12 +22,12 @@
 
 ## D1 — 계약과 기하
 
-- [ ] px 검출 초안과 mm `ConfirmedProfile`이 분리된다.
-- [ ] calibration 확정 후 mm 좌표가 CAD 입력 정본이다.
-- [ ] box/cylinder/sketch_extrusion이 판별 공용체로 검증된다.
-- [ ] 기존 1.0 저장 데이터가 2.0으로 일회성 마이그레이션된다.
-- [ ] polygon/circle hole을 포함한 extrusion이 유효한 STL/STEP을 만든다.
-- [ ] self-intersection, 외부 hole, 겹친 hole을 명시적으로 거부한다.
+- [x] px 검출 초안과 mm `ConfirmedProfile`이 분리된다.
+- [x] calibration 확정 후 mm 좌표가 CAD 입력 정본이다.
+- [x] box/cylinder/sketch_extrusion이 판별 공용체로 검증된다.
+- [x] 기존 1.0 저장 데이터가 2.0으로 일회성 마이그레이션된다.
+- [x] polygon/circle hole을 포함한 extrusion이 유효한 STL/STEP을 만든다.
+- [x] self-intersection, 외부 hole, 겹친 hole을 명시적으로 거부한다.
 
 ## D2 — 이미지 분석
 

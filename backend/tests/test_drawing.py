@@ -4,6 +4,9 @@ import json
 from pathlib import Path
 
 import pytest
+from app.cad.builder import build_solid
+from app.cad.validate import validate_solid
+from app.design.schema import DesignSpec
 
 from app.drawing.analyzer import analyze_path, overlay_svg
 from app.drawing.errors import ProfileInvalidError
@@ -57,5 +60,78 @@ def test_self_intersecting_profile_is_rejected():
                 "holes_mm": [],
                 "depth_mm": 5,
                 "confirmed": True,
+            }
+        )
+
+
+def test_design_spec_v2_builds_sketch_extrusion_with_circle_and_polygon_holes():
+    spec = DesignSpec.model_validate(
+        {
+            "schema_version": "2.0",
+            "unit": "mm",
+            "name": "imported_plate",
+            "parts": [
+                {
+                    "id": "body",
+                    "primitive": "sketch_extrusion",
+                    "profile": {
+                        "outer": [[-50, -30], [50, -30], [50, 30], [-50, 30]],
+                        "holes": [
+                            {"kind": "circle", "center": [-25, 0], "radius": 5},
+                            {
+                                "kind": "polygon",
+                                "points": [[15, -5], [25, -5], [25, 5], [15, 5]],
+                            },
+                        ],
+                    },
+                    "depth": 8,
+                    "position": {"x": 0, "y": 0, "z": 0},
+                }
+            ],
+            "operations": [],
+            "source": {"kind": "drawing_import", "analysis_id": "drawing01"},
+        }
+    )
+
+    report = validate_solid(build_solid(spec), spec)
+    assert report["is_valid"] is True
+    assert report["within_tolerance"] is True
+    assert report["bounding_box_mm"] == pytest.approx([100.0, 60.0, 8.0], abs=0.01)
+
+
+@pytest.mark.parametrize(
+    "profile",
+    [
+        {"outer": [[0, 0], [100, 50], [0, 50], [100, 0]], "holes": []},
+        {
+            "outer": [[0, 0], [100, 0], [100, 50], [0, 50]],
+            "holes": [{"kind": "circle", "center": [150, 25], "radius": 5}],
+        },
+        {
+            "outer": [[0, 0], [100, 0], [100, 50], [0, 50]],
+            "holes": [
+                {"kind": "circle", "center": [45, 25], "radius": 10},
+                {"kind": "circle", "center": [55, 25], "radius": 10},
+            ],
+        },
+    ],
+)
+def test_design_spec_rejects_invalid_sketch_topology(profile):
+    with pytest.raises(ValueError):
+        DesignSpec.model_validate(
+            {
+                "schema_version": "2.0",
+                "unit": "mm",
+                "name": "invalid",
+                "parts": [
+                    {
+                        "id": "body",
+                        "primitive": "sketch_extrusion",
+                        "profile": profile,
+                        "depth": 5,
+                        "position": {},
+                    }
+                ],
+                "operations": [],
             }
         )

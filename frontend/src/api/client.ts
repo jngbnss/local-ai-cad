@@ -16,24 +16,47 @@ export interface Vec3 {
   z: number;
 }
 
-/** box 는 x·y·z, cylinder 는 radius·height 만 채워진다. 나머지는 null. */
-export interface Dimensions {
-  x: number | null;
-  y: number | null;
-  z: number | null;
-  radius: number | null;
-  height: number | null;
+export interface BoxDimensions {
+  x: number;
+  y: number;
+  z: number;
 }
 
-export type Primitive = "box" | "cylinder";
-export type BooleanOp = "union" | "cut";
+export interface CylinderDimensions {
+  radius: number;
+  height: number;
+}
 
-export interface Part {
+export interface PartBase {
   id: string;
-  primitive: Primitive;
-  dimensions: Dimensions;
   position: Vec3;
 }
+
+export interface BoxPart extends PartBase {
+  primitive: "box";
+  dimensions: BoxDimensions;
+}
+
+export interface CylinderPart extends PartBase {
+  primitive: "cylinder";
+  dimensions: CylinderDimensions;
+}
+
+export type ProfileHole =
+  | { kind: "circle"; center: [number, number]; radius: number }
+  | { kind: "polygon"; points: [number, number][] };
+
+export interface SketchExtrusionPart extends PartBase {
+  primitive: "sketch_extrusion";
+  profile: {
+    outer: [number, number][];
+    holes: ProfileHole[];
+  };
+  depth: number;
+}
+
+export type Part = BoxPart | CylinderPart | SketchExtrusionPart;
+export type BooleanOp = "union" | "cut";
 
 export interface Operation {
   type: BooleanOp;
@@ -41,11 +64,15 @@ export interface Operation {
 }
 
 export interface DesignSpec {
-  schema_version: "1.0";
+  schema_version: "2.0";
   unit: "mm";
   name: string;
   parts: Part[];
   operations: Operation[];
+  source: {
+    kind: "text" | "drawing_import";
+    analysis_id: string | null;
+  };
 }
 
 export interface Metrics {

@@ -27,7 +27,7 @@ from app.config import Settings
 logger = logging.getLogger(__name__)
 
 _MOCK_REPLY = """{
-  "schema_version": "1.0",
+  "schema_version": "2.0",
   "unit": "mm",
   "name": "mock_desk",
   "parts": [

@@ -5,6 +5,8 @@ diff 가 그 질문에 답할 수 있는지를 가장 먼저 검증한다.
 """
 
 import threading
+import json
+import sqlite3
 
 import pytest
 
@@ -44,7 +46,7 @@ def _desk(top_thickness: float = 25.0, extra_legs: int = 0) -> DesignSpec:
         )
     return DesignSpec.model_validate(
         {
-            "schema_version": "1.0",
+            "schema_version": "2.0",
             "unit": "mm",
             "name": "desk",
             "parts": parts,
@@ -181,3 +183,46 @@ def test_concurrent_revisions_never_reuse_a_version_number(store):
     assert [v.version for v in store.list_versions(created.design_id)] == list(
         range(1, 2 + thread_count)
     )
+
+
+def test_opening_store_migrates_v1_specs_once(tmp_path):
+    db_path = tmp_path / "legacy.db"
+    HistoryStore(db_path).close()
+    legacy = {
+        "schema_version": "1.0",
+        "unit": "mm",
+        "name": "legacy_box",
+        "parts": [
+            {
+                "id": "body",
+                "primitive": "box",
+                "dimensions": {"x": 100, "y": 80, "z": 40, "radius": None, "height": None},
+                "position": {"x": 0, "y": 0, "z": 0},
+            }
+        ],
+        "operations": [],
+    }
+    connection = sqlite3.connect(db_path)
+    connection.execute(
+        "INSERT INTO design_versions"
+        " (design_id, version, spec_json, prompt, instruction, diff_json, created_at)"
+        " VALUES ('legacy01', 1, ?, 'legacy', NULL, '[]', '2026-10-15T00:00:00+00:00')",
+        (json.dumps(legacy),),
+    )
+    connection.commit()
+    connection.close()
+
+    with HistoryStore(db_path) as store:
+        restored = store.get("legacy01")
+        assert restored.spec.schema_version == "2.0"
+        assert restored.spec.parts[0].dimensions.model_dump() == {
+            "x": 100.0,
+            "y": 80.0,
+            "z": 40.0,
+        }
+
+    connection = sqlite3.connect(db_path)
+    saved = json.loads(connection.execute("SELECT spec_json FROM design_versions").fetchone()[0])
+    connection.close()
+    assert saved["schema_version"] == "2.0"
+    assert saved["source"] == {"kind": "text", "analysis_id": None}

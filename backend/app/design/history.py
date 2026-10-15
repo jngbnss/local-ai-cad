@@ -47,6 +47,62 @@ CREATE TABLE IF NOT EXISTS design_versions (
 """
 
 
+def migrate_spec_payload(payload: dict[str, Any]) -> dict[str, Any]:
+    """DesignSpec 1.0 JSON을 2.0 판별 공용체 형태로 변환한다."""
+    version = payload.get("schema_version")
+    if version == "2.0":
+        return payload
+    if version != "1.0":
+        raise HistoryError(f"지원하지 않는 DesignSpec 버전입니다: {version!r}")
+
+    migrated = json.loads(json.dumps(payload))
+    migrated["schema_version"] = "2.0"
+    migrated["source"] = {"kind": "text", "analysis_id": None}
+    for part in migrated.get("parts", []):
+        dimensions = part.get("dimensions", {})
+        if part.get("primitive") == "box":
+            part["dimensions"] = {
+                axis: dimensions[axis] for axis in ("x", "y", "z") if dimensions.get(axis) is not None
+            }
+        elif part.get("primitive") == "cylinder":
+            part["dimensions"] = {
+                axis: dimensions[axis]
+                for axis in ("radius", "height")
+                if dimensions.get(axis) is not None
+            }
+    DesignSpec.model_validate(migrated)
+    return migrated
+
+
+def _migrate_history_specs(connection: sqlite3.Connection) -> None:
+    rows = connection.execute(
+        "SELECT design_id, version, spec_json FROM design_versions"
+    ).fetchall()
+    updates: list[tuple[str, str, int]] = []
+    for row in rows:
+        payload = json.loads(row["spec_json"])
+        if payload.get("schema_version") == "1.0":
+            migrated = migrate_spec_payload(payload)
+            updates.append(
+                (
+                    json.dumps(migrated, ensure_ascii=False, separators=(",", ":")),
+                    row["design_id"],
+                    int(row["version"]),
+                )
+            )
+    if updates:
+        connection.execute("BEGIN IMMEDIATE")
+        try:
+            connection.executemany(
+                "UPDATE design_versions SET spec_json = ? WHERE design_id = ? AND version = ?",
+                updates,
+            )
+        except BaseException:
+            connection.execute("ROLLBACK")
+            raise
+        connection.execute("COMMIT")
+
+
 class HistoryError(Exception):
     """이력 저장소 계층의 기반 예외."""
 
@@ -174,6 +230,7 @@ class HistoryStore:
         self._conn.row_factory = sqlite3.Row
         with self._lock:
             self._conn.execute(_CREATE_TABLE_SQL)
+            _migrate_history_specs(self._conn)
 
     # -- 쓰기 ---------------------------------------------------------------
 

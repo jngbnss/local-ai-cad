@@ -21,7 +21,7 @@ class QueueProvider(ModelProvider):
         return GenerationResult(next(self.replies), METRICS)
 
 
-BASE = '{"schema_version":"1.0","unit":"mm","name":"block","parts":[{"id":"body","primitive":"box","dimensions":{"x":100,"y":80,"z":40},"position":{"x":0,"y":0,"z":0}}],"operations":[]}'
+BASE = '{"schema_version":"2.0","unit":"mm","name":"block","parts":[{"id":"body","primitive":"box","dimensions":{"x":100,"y":80,"z":40},"position":{"x":0,"y":0,"z":0}}],"operations":[]}'
 
 
 def test_validation_retry_sends_failure_reason_back_to_model():

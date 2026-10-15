@@ -12,11 +12,12 @@ CadQuery 호출은 우리 코드가 한다.
 from __future__ import annotations
 
 from enum import StrEnum
-from typing import Literal
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from shapely.geometry import Point, Polygon
 
-SCHEMA_VERSION = "1.0"
+SCHEMA_VERSION = "2.0"
 
 # 물리적으로 의미 있는 범위. 책상·선반 같은 가구 규모를 가정한다.
 MIN_DIMENSION_MM = 0.1
@@ -26,6 +27,7 @@ MAX_DIMENSION_MM = 10_000.0
 class Primitive(StrEnum):
     BOX = "box"
     CYLINDER = "cylinder"
+    SKETCH_EXTRUSION = "sketch_extrusion"
 
 
 class BooleanOp(StrEnum):
@@ -41,22 +43,12 @@ class Vec3(BaseModel):
     z: float = 0.0
 
 
-class Dimensions(BaseModel):
-    """박스는 x·y·z, 실린더는 radius·height 를 쓴다."""
-
+class _Dimensions(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    x: float | None = None
-    y: float | None = None
-    z: float | None = None
-    radius: float | None = None
-    height: float | None = None
-
-    @field_validator("x", "y", "z", "radius", "height")
+    @field_validator("*")
     @classmethod
-    def _positive_and_bounded(cls, value: float | None) -> float | None:
-        if value is None:
-            return None
+    def _positive_and_bounded(cls, value: float) -> float:
         if value < MIN_DIMENSION_MM:
             raise ValueError(f"치수는 {MIN_DIMENSION_MM}mm 이상이어야 합니다: {value}")
         if value > MAX_DIMENSION_MM:
@@ -64,45 +56,104 @@ class Dimensions(BaseModel):
         return value
 
 
-class Part(BaseModel):
+class BoxDimensions(_Dimensions):
+    x: float
+    y: float
+    z: float
+
+
+class CylinderDimensions(_Dimensions):
+    radius: float
+    height: float
+
+
+class _PartBase(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     id: str = Field(min_length=1, max_length=64, pattern=r"^[A-Za-z0-9_-]+$")
-    primitive: Primitive
-    """부품 하나.
-
-    `position` 은 **바닥면 중심** 좌표다. x·y 는 부품 중심, z 는 바닥 높이를 뜻한다.
-    가구는 바닥에 놓이므로 이 규약이 "다리 높이 725mm 위에 상판" 같은 배치를
-    음수 좌표 없이 표현한다. Phase 4 builder 와 `bounding_box_mm()` 이 같은 규약을 쓴다.
-    """
-
-    dimensions: Dimensions
     position: Vec3 = Field(default_factory=Vec3)
 
-    @model_validator(mode="after")
-    def _dimensions_match_primitive(self) -> "Part":
-        dims = self.dimensions
-        if self.primitive is Primitive.BOX:
-            missing = [axis for axis in ("x", "y", "z") if getattr(dims, axis) is None]
-            if missing:
-                raise ValueError(f"box 부품 '{self.id}' 에 {missing} 치수가 없습니다.")
-            if dims.radius is not None or dims.height is not None:
-                raise ValueError(f"box 부품 '{self.id}' 에 radius/height 를 쓸 수 없습니다.")
-        else:
-            if dims.radius is None or dims.height is None:
-                raise ValueError(
-                    f"cylinder 부품 '{self.id}' 에는 radius 와 height 가 모두 필요합니다."
-                )
-            if any(getattr(dims, axis) is not None for axis in ("x", "y", "z")):
-                raise ValueError(f"cylinder 부품 '{self.id}' 에 x/y/z 를 쓸 수 없습니다.")
-        return self
+    def bounding_size(self) -> tuple[float, float, float]:
+        raise NotImplementedError
+
+
+class BoxPart(_PartBase):
+    primitive: Literal[Primitive.BOX]
+    dimensions: BoxDimensions
 
     def bounding_size(self) -> tuple[float, float, float]:
-        dims = self.dimensions
-        if self.primitive is Primitive.BOX:
-            return (float(dims.x), float(dims.y), float(dims.z))
-        diameter = float(dims.radius) * 2
-        return (diameter, diameter, float(dims.height))
+        return (self.dimensions.x, self.dimensions.y, self.dimensions.z)
+
+
+class CylinderPart(_PartBase):
+    primitive: Literal[Primitive.CYLINDER]
+    dimensions: CylinderDimensions
+
+    def bounding_size(self) -> tuple[float, float, float]:
+        diameter = self.dimensions.radius * 2
+        return (diameter, diameter, self.dimensions.height)
+
+
+Point2 = tuple[float, float]
+
+
+class CircleHole(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    kind: Literal["circle"]
+    center: Point2
+    radius: float = Field(ge=MIN_DIMENSION_MM, le=MAX_DIMENSION_MM)
+
+
+class PolygonHole(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    kind: Literal["polygon"]
+    points: list[Point2] = Field(min_length=3)
+
+
+ProfileHole = Annotated[CircleHole | PolygonHole, Field(discriminator="kind")]
+
+
+class SketchProfile(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    outer: list[Point2] = Field(min_length=3)
+    holes: list[ProfileHole] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def _valid_topology(self) -> "SketchProfile":
+        outer = Polygon(self.outer)
+        if not outer.is_valid or outer.area <= 0.0:
+            raise ValueError("sketch outer는 self-intersection 없는 유효 폐곡선이어야 합니다.")
+        geometries = []
+        for index, hole in enumerate(self.holes):
+            if isinstance(hole, CircleHole):
+                geometry = Point(hole.center).buffer(hole.radius)
+            else:
+                geometry = Polygon(hole.points)
+                if not geometry.is_valid or geometry.area <= 0.0:
+                    raise ValueError(f"sketch holes[{index}] polygon이 유효하지 않습니다.")
+            if not outer.contains(geometry):
+                raise ValueError(f"sketch holes[{index}]가 outer 내부에 있지 않습니다.")
+            if any(geometry.intersects(previous) for previous in geometries):
+                raise ValueError(f"sketch holes[{index}]가 다른 hole과 겹칩니다.")
+            geometries.append(geometry)
+        return self
+
+
+class SketchExtrusionPart(_PartBase):
+    primitive: Literal[Primitive.SKETCH_EXTRUSION]
+    profile: SketchProfile
+    depth: float = Field(ge=MIN_DIMENSION_MM, le=MAX_DIMENSION_MM)
+
+    def bounding_size(self) -> tuple[float, float, float]:
+        xs = [point[0] for point in self.profile.outer]
+        ys = [point[1] for point in self.profile.outer]
+        return (max(xs) - min(xs), max(ys) - min(ys), self.depth)
+
+
+Part = Annotated[BoxPart | CylinderPart | SketchExtrusionPart, Field(discriminator="primitive")]
 
 
 class Operation(BaseModel):
@@ -112,14 +163,30 @@ class Operation(BaseModel):
     targets: list[str] = Field(min_length=2)
 
 
+class DesignSource(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    kind: Literal["text", "drawing_import"] = "text"
+    analysis_id: str | None = Field(default=None, pattern=r"^[A-Za-z0-9_-]+$")
+
+    @model_validator(mode="after")
+    def _drawing_requires_analysis_id(self) -> "DesignSource":
+        if self.kind == "drawing_import" and not self.analysis_id:
+            raise ValueError("drawing_import source에는 analysis_id가 필요합니다.")
+        if self.kind == "text" and self.analysis_id is not None:
+            raise ValueError("text source에는 analysis_id를 쓸 수 없습니다.")
+        return self
+
+
 class DesignSpec(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    schema_version: Literal["1.0"] = SCHEMA_VERSION
+    schema_version: Literal["2.0"] = SCHEMA_VERSION
     unit: Literal["mm"] = "mm"
     name: str = Field(min_length=1, max_length=128)
     parts: list[Part] = Field(min_length=1, max_length=64)
     operations: list[Operation] = Field(default_factory=list)
+    source: DesignSource = Field(default_factory=DesignSource)
 
     @model_validator(mode="after")
     def _ids_unique_and_operations_resolvable(self) -> "DesignSpec":
@@ -140,11 +207,6 @@ class DesignSpec(BaseModel):
         return self
 
     def bounding_box_mm(self) -> tuple[float, float, float]:
-        """부품 배치를 포함한 전체 바운딩 박스 크기(mm).
-
-        Phase 4의 치수 검증이 "명세대로 만들어졌는가"를 판정하는 기준이다.
-        cut 연산은 크기를 줄일 수 있으므로 여기서는 union 기준 상한을 계산한다.
-        """
         lows: list[tuple[float, float, float]] = []
         highs: list[tuple[float, float, float]] = []
         for part in self.parts:
