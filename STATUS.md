@@ -78,6 +78,7 @@
 - `experiments/spec_accuracy_report.md`
 - `docs/roadmap.md`
 - `docs/track-d-checklist.md`
+- `docs/track-v-cad-reverse-engineering-design.md`
 - `experiments/drawing-e2e/report.md`
 
 ## 3. 실행 방법
@@ -112,10 +113,10 @@ $env:LOCAL_AI_CAD_USE_MOCK = "1"
 
 우선순위는 다음과 같다.
 
-1. 사용자 실제 정면 도면 10개를 확보해 Track D 수동 수정 횟수와 성공률을 검증한다.
-2. C: 여유 공간을 최소 35GB 이상으로 확보한다.
-3. **Phase 7** Docker/WSL2 GPU 패키징을 진행한다.
-4. 컨테이너 실제 GPU E2E와 호스트 대비 성능을 측정한다.
+1. 실제 3면도+STEP 10세트를 확보하고 Track V 입력·평가 계약을 확정한다.
+2. 정면·평면·우측면 업로드와 결정론적 교차 돌출·재투영 검증을 구현한다.
+3. C: 여유 공간을 최소 35GB 이상 확보한 뒤 Drawing2CAD·COLMAP을 격리 환경에서 평가한다.
+4. **Phase 7** Docker/WSL2 GPU 패키징과 실제 GPU E2E를 진행한다.
 5. 필요하면 **트랙 Q**로 복합 가구 정확도를 90%에서 100%로 개선한다.
 
 세부 체크리스트와 완료 조건은 [`TODO.md`](TODO.md)를 따른다.
