@@ -15,6 +15,7 @@
 | D4-001 | D4 | 해결 | SVG drag 종료 시 React state closure가 시작 프로파일을 history에 넣지 않아 첫 undo가 이동을 되돌리지 못함 | drag 시작 시 history snapshot을 먼저 저장하도록 변경; 실제 브라우저에서 move → undo → redo 좌표 일치 확인 |
 | D4-TOOL-001 | D4 | 우회 | 자동화 `browser.open`이 managed 옵션에서도 오래된 Browser Relay 오류로 실패 | QA 이슈 보고 후 설치된 Edge를 Puppeteer로 직접 구동해 실제 UI upload/edit/generate/Viewer를 검증 |
 | D5-ENV-001 | D5 | 관리됨 | Windows 임시 디렉터리 정리 중 외부 ESTsoft 프로세스 경합으로 pytest `WinError 145` 경고 | 55개 테스트는 모두 통과했으며 제품·테스트 결과에 영향 없음. 외부 프로세스 소유 경로는 삭제하지 않음 |
+| D7-001 | D7 | 해결 | 중단하지 않은 백엔드가 `cv2.pyd`를 점유해 기존 `rapidocr-onnxruntime` 설치가 `WinError 5`로 실패 | 서버를 중단하고 `opencv-python-headless`와 호환되는 유지보수 패키지 `rapidocr==3.10.0` 및 CPU `onnxruntime==1.31.0` 설치 |
 
 ## 단계별 추가 규칙
 

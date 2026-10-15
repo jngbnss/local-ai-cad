@@ -109,6 +109,11 @@ button:disabled { cursor: not-allowed; opacity: .5; }
 .candidate-list, .hole-list { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; margin-top: 12px; }
 .candidate-list strong, .hole-list strong { flex: 0 0 100%; font-size: 11px; }
 .hole-list label { display: flex; align-items: center; gap: 4px; font-size: 10px; }
+.dimension-list { display: grid; gap: 6px; margin-top: 12px; padding: 10px; border: 1px solid #c8d2eb; border-radius: 3px; background: #f4f7ff; }
+.dimension-list > strong { font-size: 10px; color: #38518d; }
+.dimension-list > div { display: grid; grid-template-columns: minmax(100px, 1fr) 72px auto auto; gap: 5px; align-items: center; font-size: 10px; }
+.dimension-list input, .dimension-list button { min-width: 0; padding: 6px; border: 1px solid #bfc7d8; border-radius: 2px; background: #fff; font-size: 10px; }
+.dimension-list .is-rejected { opacity: .5; text-decoration: line-through; }
 .hole-list input[type="number"] { width: 70px; padding: 5px; border: 1px solid #cfcdc5; border-radius: 2px; }
 .drawing-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
 .drawing-fields label { display: grid; gap: 4px; color: #62645f; font-size: 10px; }

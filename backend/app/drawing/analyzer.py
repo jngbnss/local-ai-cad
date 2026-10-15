@@ -18,6 +18,7 @@ import numpy as np
 from PIL import Image, ImageOps, UnidentifiedImageError
 
 from app.drawing.errors import ImageTooLargeError, ProfileDetectionError, UnsupportedImageError
+from app.drawing.ocr import DimensionCandidate, OcrUnavailableError, extract_dimensions
 
 MAX_FILE_BYTES = 10 * 1024 * 1024
 MAX_PIXELS = 4096 * 4096
@@ -85,6 +86,7 @@ class DetectedProfile:
     outer: PolygonCandidate
     outer_candidates: list[PolygonCandidate]
     holes: list[HoleCandidate]
+    dimensions: list[DimensionCandidate] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
     analysis_seconds: float = 0.0
     normalized_png: bytes = b""
@@ -96,6 +98,7 @@ class DetectedProfile:
             "outer": self.outer.as_dict(),
             "outer_candidates": [candidate.as_dict() for candidate in self.outer_candidates],
             "holes": [hole.as_dict() for hole in self.holes],
+            "dimensions": [candidate.as_dict() for candidate in self.dimensions],
             "warnings": list(self.warnings),
             "analysis_seconds": self.analysis_seconds,
         }
@@ -172,6 +175,12 @@ def analyze_image(data: bytes, region: AnalysisRegion | None = None) -> Detected
             else:
                 holes.append(_hole(contour))
         child_index = int(hierarchy_rows[child_index][0])
+    try:
+        dimensions = extract_dimensions(cropped)
+    except OcrUnavailableError:
+        dimensions = []
+        warnings.append("ocr_unavailable")
+
 
     ok, png = cv2.imencode(".png", normalized)
     if not ok:
@@ -183,6 +192,7 @@ def analyze_image(data: bytes, region: AnalysisRegion | None = None) -> Detected
         outer=outer,
         outer_candidates=outer_candidates,
         holes=holes,
+        dimensions=dimensions,
         warnings=warnings,
         analysis_seconds=round(perf_counter() - started, 6),
         normalized_png=png.tobytes(),

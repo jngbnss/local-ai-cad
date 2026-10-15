@@ -5,6 +5,8 @@ import json
 import os
 from pathlib import Path
 
+import cv2
+import numpy as np
 import pytest
 from PIL import Image, ImageDraw
 from app.cad.builder import build_solid
@@ -16,6 +18,7 @@ from app.drawing.errors import ProfileInvalidError, UnsupportedImageError
 from app.drawing.fixtures import generate_suite
 from app.drawing.prototype import build_prototype_solid, confirmed_profile, export_step
 from app.drawing.store import cleanup_analyses
+from app.drawing.ocr import OcrUnavailableError, extract_dimensions
 
 
 def test_ten_drawing_spike_cases_produce_valid_step(tmp_path: Path):
@@ -193,3 +196,41 @@ def test_analysis_cleanup_only_removes_expired_valid_ids(tmp_path):
     assert not expired.exists()
     assert current.exists()
     assert unrelated.exists()
+
+
+def test_cpu_ocr_returns_confirmable_dimension_candidate():
+    image = np.full((160, 500, 3), 255, np.uint8)
+    cv2.putText(
+        image,
+        "120 mm",
+        (20, 100),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        2,
+        (0, 0, 0),
+        4,
+        cv2.LINE_AA,
+    )
+
+    candidates = extract_dimensions(image)
+
+    assert candidates
+    assert candidates[0].value_mm == 120.0
+    assert candidates[0].confidence > 0.9
+    assert len(candidates[0].box_px) == 4
+
+
+def test_ocr_failure_preserves_manual_analysis(tmp_path, monkeypatch):
+    from app.drawing import analyzer
+
+    manifest_path = generate_suite(tmp_path, count=1)
+    case = json.loads(manifest_path.read_text(encoding="utf-8"))[0]
+
+    def fail_ocr(_image):
+        raise OcrUnavailableError("OCR disabled")
+
+    monkeypatch.setattr(analyzer, "extract_dimensions", fail_ocr)
+    detected = analyze_path(tmp_path / case["image"])
+
+    assert detected.outer.points_px
+    assert detected.dimensions == []
+    assert "ocr_unavailable" in detected.warnings

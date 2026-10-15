@@ -183,6 +183,16 @@ export interface DrawingPolygonCandidate {
   confidence: number;
 }
 
+export interface DimensionCandidate {
+  text: string;
+  value: number;
+  unit: "mm" | "cm";
+  value_mm: number;
+  confidence: number;
+  box_px: [number, number][];
+}
+
+
 export interface DrawingAnalysis {
   analysis_id: string;
   image_url: string;
@@ -193,6 +203,7 @@ export interface DrawingAnalysis {
     outer: DrawingPolygonCandidate;
     outer_candidates: DrawingPolygonCandidate[];
     holes: DrawingHoleCandidate[];
+    dimensions: DimensionCandidate[];
     warnings: string[];
     analysis_seconds: number;
   };

@@ -62,6 +62,8 @@ export function DrawingPanel({ onGenerated, onError }: DrawingPanelProps) {
   const [referenceMm, setReferenceMm] = useState(100);
   const [depth, setDepth] = useState(10);
   const [name, setName] = useState("도면 가져오기");
+  const [dimensionValues, setDimensionValues] = useState<number[]>([]);
+  const [rejectedDimensions, setRejectedDimensions] = useState<number[]>([]);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -80,6 +82,8 @@ export function DrawingPanel({ onGenerated, onError }: DrawingPanelProps) {
     setProfile(null);
     setPast([]);
     setFuture([]);
+    setDimensionValues([]);
+    setRejectedDimensions([]);
   }
 
   function rawPoint(event: ReactPointerEvent<HTMLDivElement>): Point | null {
@@ -133,6 +137,8 @@ export function DrawingPanel({ onGenerated, onError }: DrawingPanelProps) {
       setProfile(editable);
       setPast([]);
       setFuture([]);
+      setDimensionValues(result.profile.dimensions.map((candidate) => candidate.value_mm));
+      setRejectedDimensions([]);
     } catch (caught) {
       onError(apiError(caught));
     } finally {
@@ -318,6 +324,30 @@ export function DrawingPanel({ onGenerated, onError }: DrawingPanelProps) {
               <label key={`r-${index}`}>반경(px)<input type="number" min="1" step="0.5" value={hole.radius_px} onChange={(event) => { const next = cloneProfile(profile); const target = next.holes[index]; if (target?.kind === "circle") target.radius_px = Number(event.target.value); apply(next); }} /></label>
             ))}
           </div>
+
+          {analysis.profile.dimensions.length > 0 && (
+            <div className="dimension-list">
+              <strong>OCR 치수 후보 — 확인 전에는 적용되지 않습니다</strong>
+              {analysis.profile.dimensions.map((candidate, index) => (
+                <div key={`${candidate.text}-${index}`} className={rejectedDimensions.includes(index) ? "is-rejected" : ""}>
+                  <span>{candidate.text} · {(candidate.confidence * 100).toFixed(0)}%</span>
+                  <input
+                    aria-label={`OCR 치수 후보 ${index + 1}`}
+                    type="number"
+                    min="0.1"
+                    step="0.1"
+                    value={dimensionValues[index] ?? candidate.value_mm}
+                    disabled={rejectedDimensions.includes(index)}
+                    onChange={(event) => setDimensionValues((values) => values.map((value, item) => item === index ? Number(event.target.value) : value))}
+                  />
+                  <button type="button" disabled={rejectedDimensions.includes(index)} onClick={() => setReferenceMm(dimensionValues[index] ?? candidate.value_mm)}>기준 길이로 사용</button>
+                  <button type="button" onClick={() => setRejectedDimensions((items) => items.includes(index) ? items.filter((item) => item !== index) : [...items, index])}>
+                    {rejectedDimensions.includes(index) ? "복원" : "거부"}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
 
           <div className="editor-toolbar">
             <button type="button" onClick={undo} disabled={past.length === 0}>실행 취소</button>
