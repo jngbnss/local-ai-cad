@@ -95,6 +95,6 @@
 - [x] 백엔드 전체 테스트 59개가 통과한다.
 - [x] 프론트엔드 TypeScript 검사와 프로덕션 빌드가 통과한다.
 - [x] Track D 합성 회귀 30/30과 실제 브라우저 사용자 피드백 경로가 통과한다.
-- [ ] 최신 수정 커밋의 GitHub Actions backend/frontend 통과를 확인한다.
+- [x] 수정 커밋 `61bdfe0`의 GitHub Actions backend/frontend가 통과했다([run 38667472910](https://github.com/jngbnss/local-ai-cad/actions/runs/38667472910)).
 - [x] README, STATUS, TODO, 설계, 오류 기록이 실제 상태와 일치한다.
 - [ ] 실제 사용자 도면 10개 검증 — 입력이 제공되지 않아 완료 처리하지 않는다.
