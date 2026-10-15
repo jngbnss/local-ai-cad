@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import {
   ApiError,
@@ -8,14 +8,20 @@ import {
   getVersion,
   health,
   reviseDesign,
-  type DesignResponse,
-  type HealthResponse,
-  type HistoryEntry,
 } from "./api/client";
+import type {
+  DesignResponse,
+  DrawingGenerateResponse,
+  HealthResponse,
+  HistoryEntry,
+} from "./api/client";
+import { DrawingPanel } from "./components/DrawingPanel";
 import { HistoryPanel } from "./components/HistoryPanel";
-import { Viewer } from "./components/Viewer";
+
+const Viewer = lazy(() => import("./components/Viewer").then((module) => ({ default: module.Viewer })));
 
 type Stage = "idle" | "llm" | "geometry" | "done";
+type InputMode = "text" | "drawing";
 
 const ERROR_GUIDE: Record<string, string> = {
   cuda_unavailable: "CUDA와 그래픽 드라이버 상태를 확인해 주세요.",
@@ -23,6 +29,12 @@ const ERROR_GUIDE: Record<string, string> = {
   schema_invalid: "치수와 부품 수를 더 명확하게 적어 다시 시도해 주세요.",
   geometry_failed: "서로 겹치는 부품이나 지나치게 작은 치수가 없는지 확인해 주세요.",
   model_download_failed: "인터넷 연결과 모델 캐시 경로를 확인해 주세요.",
+  image_too_large: "10MB 이하이며 4096×4096 픽셀 이하인 이미지를 사용해 주세요.",
+  image_unsupported: "PNG, JPEG 또는 WebP 이미지를 선택해 주세요.",
+  profile_detection_failed: "닫힌 외곽선이 선명한 영역을 다시 선택해 주세요.",
+  profile_invalid: "겹치거나 외곽선 밖에 있는 구멍과 점 위치를 확인해 주세요.",
+  analysis_not_found: "분석 결과가 만료됐습니다. 이미지를 다시 분석해 주세요.",
+  invalid_analysis_region: "폭과 높이가 있는 영역을 다시 선택해 주세요.",
   network: "백엔드가 127.0.0.1:8000에서 실행 중인지 확인해 주세요.",
   unknown: "백엔드 로그에서 요청 ID와 상세 오류를 확인해 주세요.",
 };
@@ -35,11 +47,12 @@ export default function App() {
   const [server, setServer] = useState<HealthResponse | null>(null);
   const [prompt, setPrompt] = useState("가로 1200mm, 깊이 600mm, 높이 750mm인 책상을 만들어줘. 상판 두께는 25mm이고 다리는 4개야.");
   const [revision, setRevision] = useState("");
-  const [result, setResult] = useState<DesignResponse | null>(null);
+  const [result, setResult] = useState<DesignResponse | DrawingGenerateResponse | null>(null);
   const [historyEntries, setHistoryEntries] = useState<HistoryEntry[]>([]);
   const [stage, setStage] = useState<Stage>("idle");
   const [error, setError] = useState<ApiError | null>(null);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [mode, setMode] = useState<InputMode>("text");
 
   useEffect(() => {
     health().then(setServer).catch(() => setServer(null));
@@ -72,7 +85,7 @@ export default function App() {
 
   async function revise(event: FormEvent) {
     event.preventDefault();
-    if (!result || !revision.trim()) return;
+    if (!result || mode !== "text" || !revision.trim()) return;
     setError(null);
     setStage("llm");
     try {
@@ -98,6 +111,17 @@ export default function App() {
     }
   }
 
+  async function acceptDrawing(created: DrawingGenerateResponse) {
+    setError(null);
+    setResult(created);
+    await refreshHistory(created.design_id);
+    setStage("done");
+  }
+
+  function showError(caught: ApiError) {
+    setError(caught);
+  }
+
   const busy = stage === "llm" || stage === "geometry";
 
   return (
@@ -116,55 +140,67 @@ export default function App() {
 
       <div id="top" className="workspace">
         <aside className="control-column">
+          <nav className="input-tabs" aria-label="설계 입력 방식">
+            <button type="button" className={mode === "text" ? "is-active" : ""} onClick={() => setMode("text")}>텍스트 설계</button>
+            <button type="button" className={mode === "drawing" ? "is-active" : ""} onClick={() => setMode("drawing")}>2D 도면 가져오기</button>
+          </nav>
           <section className="intro">
             <span className="eyebrow">PRIVATE · GPU LOCAL</span>
             <h1>말로 만드는<br /><em>실제 CAD.</em></h1>
             <p>설명은 로컬 LLM이 명세로 바꾸고, CadQuery가 바로 제작 가능한 STEP과 STL을 만듭니다.</p>
           </section>
 
-          <form className="prompt-card" onSubmit={submit}>
-            <label htmlFor="prompt">무엇을 설계할까요?</label>
-            <textarea id="prompt" value={prompt} onChange={(event) => setPrompt(event.target.value)} rows={6} maxLength={4000} />
-            <div className="prompt-footer">
-              <span>{prompt.length} / 4000</span>
-              <button className="primary-button" disabled={busy || !prompt.trim()}>
-                {busy ? "생성 중…" : "설계 생성"}<span aria-hidden="true">→</span>
-              </button>
-            </div>
-          </form>
+          {mode === "text" ? (
+            <>
+              <form className="prompt-card" onSubmit={submit}>
+                <label htmlFor="prompt">무엇을 설계할까요?</label>
+                <textarea id="prompt" value={prompt} onChange={(event) => setPrompt(event.target.value)} rows={6} maxLength={4000} />
+                <div className="prompt-footer">
+                  <span>{prompt.length} / 4000</span>
+                  <button className="primary-button" disabled={busy || !prompt.trim()}>
+                    {busy ? "생성 중…" : "설계 생성"}<span aria-hidden="true">→</span>
+                  </button>
+                </div>
+              </form>
 
-          {busy && (
-            <div className="progress-card" role="status">
-              <span className="spinner" />
-              <div><strong>{stage === "llm" ? "설계 명세 생성 중" : "3D 형상 생성 중"}</strong><small>GPU에서 로컬로 처리하고 있습니다.</small></div>
-            </div>
+              {busy && (
+                <div className="progress-card" role="status">
+                  <span className="spinner" />
+                  <div><strong>{stage === "llm" ? "설계 명세 생성 중" : "3D 형상 생성 중"}</strong><small>GPU에서 로컬로 처리하고 있습니다.</small></div>
+                </div>
+              )}
+
+              {result && (
+                <form className="revision-card" onSubmit={revise}>
+                  <label htmlFor="revision">이 설계를 수정하기</label>
+                  <div className="inline-input">
+                    <input id="revision" value={revision} onChange={(event) => setRevision(event.target.value)} placeholder="예: 다리를 10mm 더 두껍게" />
+                    <button disabled={busy || !revision.trim()}>수정</button>
+                  </div>
+                </form>
+              )}
+            </>
+          ) : (
+            <DrawingPanel onGenerated={acceptDrawing} onError={showError} />
           )}
 
           {error && (
             <div className="error-card" role="alert">
               <strong>{error.message}</strong>
-              <p>{ERROR_GUIDE[error.errorType]}</p>
+              <p>{ERROR_GUIDE[error.errorType] ?? ERROR_GUIDE.unknown}</p>
               {error.detail && <details><summary>상세 정보</summary><pre>{error.detail}</pre></details>}
             </div>
-          )}
-
-          {result && (
-            <form className="revision-card" onSubmit={revise}>
-              <label htmlFor="revision">이 설계를 수정하기</label>
-              <div className="inline-input">
-                <input id="revision" value={revision} onChange={(event) => setRevision(event.target.value)} placeholder="예: 다리를 10mm 더 두껍게" />
-                <button disabled={busy || !revision.trim()}>수정</button>
-              </div>
-            </form>
           )}
         </aside>
 
         <section className="result-column">
-          <Viewer url={result ? artifactUrl(result.artifacts.stl) : null} label={result?.spec.name ?? "3D 미리보기"} />
+          <Suspense fallback={<div className="viewer viewer-loading">3D 뷰어 불러오는 중…</div>}>
+            <Viewer url={result ? artifactUrl(result.artifacts.stl) : null} label={result?.spec.name ?? "3D 미리보기"} />
+          </Suspense>
           {result && (
             <div className="result-strip">
               <div><span className="eyebrow">DESIGN</span><strong>{result.spec.name}</strong><small>v{result.version} · {result.spec.parts.length}개 부품</small></div>
-              <div className="metric"><span>추론</span><strong>{formatSeconds(result.metrics.inference_seconds)}</strong></div>
+              {"metrics" in result && <div className="metric"><span>추론</span><strong>{formatSeconds(result.metrics.inference_seconds)}</strong></div>}
               <div className="metric"><span>부피</span><strong>{(result.geometry.volume_mm3 / 1_000_000).toFixed(1)} L</strong></div>
               <div className="downloads">
                 <a href={artifactUrl(result.artifacts.stl)} download>STL</a>
@@ -173,7 +209,7 @@ export default function App() {
             </div>
           )}
 
-          {result?.diff && result.diff.length > 0 && (
+          {result && "diff" in result && result.diff.length > 0 && (
             <section className="diff-card">
               <span className="eyebrow">LATEST CHANGE</span>
               {result.diff.map((item) => <p key={item.path}><code>{item.path}</code><span>{String(item.before)} → {String(item.after)}</span></p>)}

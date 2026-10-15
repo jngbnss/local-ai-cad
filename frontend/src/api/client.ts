@@ -161,6 +161,59 @@ export interface VersionResponse {
   artifacts: Artifacts;
 }
 
+export type DrawingHoleCandidate =
+  | {
+      kind: "circle";
+      center_px: [number, number];
+      radius_px: number;
+      area_px2: number;
+      confidence: number;
+    }
+  | {
+      kind: "polygon";
+      points_px: [number, number][];
+      area_px2: number;
+      confidence: number;
+    };
+
+export interface DrawingPolygonCandidate {
+  kind: "polygon";
+  points_px: [number, number][];
+  area_px2: number;
+  confidence: number;
+}
+
+export interface DrawingAnalysis {
+  analysis_id: string;
+  image_url: string;
+  overlay_url: string;
+  profile: {
+    schema_version: string;
+    image: { width_px: number; height_px: number };
+    outer: DrawingPolygonCandidate;
+    outer_candidates: DrawingPolygonCandidate[];
+    holes: DrawingHoleCandidate[];
+    warnings: string[];
+    analysis_seconds: number;
+  };
+}
+
+export interface AnalysisRegion {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export interface DrawingGenerateResponse {
+  design_id: string;
+  version: number;
+  spec: DesignSpec;
+  artifacts: Artifacts;
+  geometry: GeometryReport;
+  request_id: string;
+}
+
 /**
  * 오류 분류.
  *
@@ -180,6 +233,12 @@ export type ApiErrorType =
   | "version_not_found"
   | "inference_failed"
   | "config_invalid"
+  | "image_too_large"
+  | "image_unsupported"
+  | "profile_detection_failed"
+  | "profile_invalid"
+  | "analysis_not_found"
+  | "invalid_analysis_region"
   | "network"
   | "unknown";
 
@@ -195,6 +254,12 @@ const KNOWN_ERROR_TYPES: readonly ApiErrorType[] = [
   "version_not_found",
   "inference_failed",
   "config_invalid",
+  "image_too_large",
+  "image_unsupported",
+  "profile_detection_failed",
+  "profile_invalid",
+  "analysis_not_found",
+  "invalid_analysis_region",
 ];
 
 export class ApiError extends Error {
@@ -260,6 +325,12 @@ const FALLBACK_MESSAGE: Record<ApiErrorType, string> = {
   version_not_found: "요청한 설계 버전을 찾지 못했습니다.",
   inference_failed: "로컬 모델 추론에 실패했습니다.",
   config_invalid: "백엔드 설정이 올바르지 않습니다.",
+  image_too_large: "이미지가 파일 또는 픽셀 상한을 넘었습니다.",
+  image_unsupported: "PNG, JPEG, WebP 이미지만 사용할 수 있습니다.",
+  profile_detection_failed: "닫힌 외곽선을 찾지 못했습니다.",
+  profile_invalid: "확정한 외곽선 또는 구멍이 유효하지 않습니다.",
+  analysis_not_found: "도면 분석 결과가 만료됐습니다. 이미지를 다시 분석해 주세요.",
+  invalid_analysis_region: "분석 영역 좌표가 올바르지 않습니다.",
   network: "백엔드에 연결할 수 없습니다.",
   unknown: "백엔드가 요청을 처리하지 못했습니다.",
 };
@@ -322,6 +393,33 @@ export function health(): Promise<HealthResponse> {
 
 export function generate(prompt: string): Promise<GenerateResponse> {
   return postJson<GenerateResponse>(`${BASE}/generate`, { prompt });
+}
+
+export function analyzeDrawing(
+  image: File,
+  region: AnalysisRegion | null,
+): Promise<DrawingAnalysis> {
+  const body = new FormData();
+  body.append("image", image);
+  if (region !== null) {
+    body.append("x", String(region.x));
+    body.append("y", String(region.y));
+    body.append("width", String(region.width));
+    body.append("height", String(region.height));
+  }
+  return request<DrawingAnalysis>(`${BASE}/drawing/analyze`, {
+    method: "POST",
+    body,
+  });
+}
+
+export function generateDrawing(payload: {
+  analysis_id: string;
+  name: string;
+  profile: { outer: [number, number][]; holes: ProfileHole[] };
+  depth: number;
+}): Promise<DrawingGenerateResponse> {
+  return postJson<DrawingGenerateResponse>(`${BASE}/drawing/generate`, payload);
 }
 
 export function createDesign(prompt: string): Promise<DesignResponse> {
