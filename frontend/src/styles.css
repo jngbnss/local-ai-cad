@@ -117,8 +117,7 @@ button:disabled { cursor: not-allowed; opacity: .5; }
 .profile-summary th { width: 20%; color: #6f716c; font-weight: 600; }
 .profile-summary td { width: 30%; font-family: "Cascadia Mono", Consolas, monospace; }
 .profile-summary tr:last-child th, .profile-summary tr:last-child td { border-bottom: 0; }
-.detail-confirmation { display: flex; align-items: flex-start; gap: 7px; margin-top: 8px; padding: 9px; border: 1px solid #d9a24d; border-radius: 3px; background: #fffaf1; color: #62491f; font-size: 10px; line-height: 1.45; }
-.detail-confirmation input { margin-top: 2px; }
+.drawing-blocked { margin: 8px 0 0; padding: 9px; border: 1px solid #b83b2f; border-radius: 3px; background: #fff4f2; color: #7a2119; font-size: 10px; font-weight: 700; line-height: 1.45; }
 .candidate-list, .hole-list { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; margin-top: 12px; }
 .candidate-list strong, .hole-list strong { flex: 0 0 100%; font-size: 11px; }
 .hole-list label { display: flex; align-items: center; gap: 4px; font-size: 10px; }

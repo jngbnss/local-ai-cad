@@ -8,18 +8,91 @@
 from __future__ import annotations
 
 import json
+import re
 import logging
 from dataclasses import dataclass, field
 
 from pydantic import ValidationError
+from app.ai.metrics import InferenceMetrics
 
 from app.ai.providers import ModelProvider
 from app.design.prompt import build_messages, build_revision_messages, extract_json_object
-from app.design.schema import DesignSpec
+from app.design.schema import BoxPart, DesignSpec
 
 logger = logging.getLogger(__name__)
 
 DEFAULT_MAX_ATTEMPTS = 3
+_TOP_PATTERN = re.compile(r"(상판|윗판|위(?:에)?\s*판자)")
+_LEG_PATTERN = re.compile(r"(다리|지지대)")
+_COVER_PATTERN = re.compile(r"(덮|포함|튀어나오|밖으로\s*나오)")
+
+
+def _cover_supports(current: DesignSpec, instruction: str) -> DesignSpec | None:
+    """상판이 하부 지지물을 감싸라는 명확한 공간 관계는 LLM 없이 계산한다."""
+    if not (
+        _TOP_PATTERN.search(instruction)
+        and _LEG_PATTERN.search(instruction)
+        and _COVER_PATTERN.search(instruction)
+    ):
+        return None
+
+    box_parts = [
+        (index, part)
+        for index, part in enumerate(current.parts)
+        if isinstance(part, BoxPart)
+    ]
+    if len(box_parts) < 2:
+        return None
+
+    named_tops = [
+        item
+        for item in box_parts
+        if re.search(r"(?:^|[_-])(top|tabletop|top_board)(?:$|[_-])", item[1].id)
+    ]
+    top_index, top = max(
+        named_tops or box_parts,
+        key=lambda item: item[1].position.z + item[1].dimensions.z,
+    )
+    supports = [
+        part
+        for index, part in box_parts
+        if index != top_index and part.position.z < top.position.z
+    ]
+    if not supports:
+        return None
+
+    min_x = min(part.position.x - part.dimensions.x / 2 for part in supports)
+    max_x = max(part.position.x + part.dimensions.x / 2 for part in supports)
+    min_y = min(part.position.y - part.dimensions.y / 2 for part in supports)
+    max_y = max(part.position.y + part.dimensions.y / 2 for part in supports)
+    required_x = max_x - min_x
+    required_y = max_y - min_y
+    if required_x <= top.dimensions.x and required_y <= top.dimensions.y:
+        return current.model_copy(deep=True)
+
+    revised = current.model_copy(deep=True)
+    revised_top = revised.parts[top_index]
+    if not isinstance(revised_top, BoxPart):
+        return None
+    revised_top.dimensions.x = max(revised_top.dimensions.x, required_x)
+    revised_top.dimensions.y = max(revised_top.dimensions.y, required_y)
+    revised_top.position.x = (min_x + max_x) / 2
+    revised_top.position.y = (min_y + max_y) / 2
+    return DesignSpec.model_validate(revised.model_dump())
+
+
+def _rule_metrics() -> InferenceMetrics:
+    return InferenceMetrics(
+        provider="rule",
+        model_id="deterministic-geometry",
+        device="cpu",
+        dtype="n/a",
+        load_seconds=0,
+        inference_seconds=0,
+        input_tokens=0,
+        output_tokens=0,
+        peak_vram_mib=0,
+    )
 
 
 class SpecGenerationError(Exception):
@@ -91,6 +164,9 @@ def revise_spec(
     max_attempts: int = DEFAULT_MAX_ATTEMPTS,
 ) -> SpecResult:
     """기존 명세 + 수정 지시 → 새 DesignSpec."""
+    deterministic = _cover_supports(current, instruction)
+    if deterministic is not None:
+        return SpecResult(spec=deterministic, metrics=_rule_metrics())
     return _run_loop(
         provider, build_revision_messages(current, instruction), max_attempts, "수정"
     )

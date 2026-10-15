@@ -7,6 +7,8 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
+from app.design.schema import DesignSpec
+from app.design.validator import SpecAttempt, SpecGenerationError
 from app.main import create_app
 
 
@@ -180,3 +182,77 @@ def test_drawing_generate_validation_error_is_structured(client):
     assert response.status_code == 422
     assert response.json()["error_type"] == "profile_invalid"
     assert response.json()["detail"]["errors"]
+
+
+def test_drawing_generate_blocks_photo_like_analysis(client):
+    image = Path("datasets/drawings/regression/drawing-01-rectangle-01.png")
+    analyzed = client.post(
+        "/api/v1/drawing/analyze",
+        files={"image": ("drawing.png", image.read_bytes(), "image/png")},
+    ).json()
+    profile_path = (
+        client.app.state.app_state.artifact_dir
+        / "drawing-analyses"
+        / analyzed["analysis_id"]
+        / "profile.json"
+    )
+    profile = json.loads(profile_path.read_text(encoding="utf-8"))
+    profile["warnings"].append("detail_heavy_input")
+    profile_path.write_text(json.dumps(profile), encoding="utf-8")
+
+    response = client.post(
+        "/api/v1/drawing/generate",
+        json={
+            "analysis_id": analyzed["analysis_id"],
+            "name": "photo",
+            "profile": {
+                "outer": [
+                    [point[0] * 0.1, point[1] * 0.1]
+                    for point in analyzed["profile"]["outer"]["points_px"]
+                ],
+                "holes": [],
+            },
+            "depth": 5,
+        },
+    )
+
+    assert response.status_code == 422
+    assert response.json()["error_type"] == "photo_input_unsupported"
+
+
+def test_revision_generation_error_is_structured(client, monkeypatch):
+    from app.api.v1 import routes
+
+    record = client.app.state.app_state.history.create(
+        DesignSpec.model_validate(
+            {
+                "schema_version": "2.0",
+                "unit": "mm",
+                "name": "block",
+                "parts": [
+                    {
+                        "id": "body",
+                        "primitive": "box",
+                        "dimensions": {"x": 100, "y": 80, "z": 40},
+                        "position": {},
+                    }
+                ],
+                "operations": [],
+            }
+        ),
+        "block",
+    )
+
+    def fail_revision(*_args, **_kwargs):
+        attempt = SpecAttempt(1, "출력에서 JSON 객체를 찾지 못했습니다.", "")
+        raise SpecGenerationError("유효한 설계 명세를 만들지 못했습니다.", [attempt])
+
+    monkeypatch.setattr(routes, "revise_spec", fail_revision)
+    response = client.post(
+        f"/api/v1/design/{record.design_id}/revise",
+        json={"instruction": "상판을 넓혀줘"},
+    )
+
+    assert response.status_code == 422
+    assert response.json()["error_type"] == "schema_invalid"
+    assert response.json()["detail"]["attempts"][0]["failure"].startswith("출력에서")

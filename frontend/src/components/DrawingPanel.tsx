@@ -53,7 +53,7 @@ const WARNING_TEXT: Record<string, string> = {
   double_contour_suspected: "굵은 이중선을 구멍에서 제외했습니다.",
   small_outer_candidates_ignored: "작은 글자·잡음 외곽 후보를 제외했습니다.",
   small_holes_ignored: "작은 글자·무늬를 구멍에서 제외했습니다.",
-  detail_heavy_input: "세부 무늬가 많습니다. 실물 사진 대신 형상선만 있는 정면 도면을 권장합니다.",
+  detail_heavy_input: "문자·무늬·배경이 많은 사진은 정확한 CAD로 변환할 수 없습니다. 형상선만 있는 정면 도면을 올려 주세요.",
   ocr_unavailable: "OCR을 사용할 수 없습니다. 기준 길이를 직접 입력하세요.",
 };
 
@@ -112,7 +112,6 @@ export function DrawingPanel({ onGenerated, onError, onReset }: DrawingPanelProp
   const [name, setName] = useState("도면 가져오기");
   const [dimensionValues, setDimensionValues] = useState<number[]>([]);
   const [rejectedDimensions, setRejectedDimensions] = useState<number[]>([]);
-  const [detailConfirmed, setDetailConfirmed] = useState(false);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -135,7 +134,6 @@ export function DrawingPanel({ onGenerated, onError, onReset }: DrawingPanelProp
     setDimensionValues([]);
     setRejectedDimensions([]);
     setPointMode("move");
-    setDetailConfirmed(false);
     setSelectedOuterPoint(null);
   }
 
@@ -193,7 +191,6 @@ export function DrawingPanel({ onGenerated, onError, onReset }: DrawingPanelProp
       setFuture([]);
       setDimensionValues(result.profile.dimensions.map((candidate) => candidate.value_mm));
       setRejectedDimensions([]);
-      setDetailConfirmed(false);
       setSelectedOuterPoint(null);
     } catch (caught) {
       onError(apiError(caught));
@@ -304,8 +301,8 @@ export function DrawingPanel({ onGenerated, onError, onReset }: DrawingPanelProp
 
   async function generate() {
     if (!analysis || !profile) return;
-    if (analysis.profile.warnings.includes("detail_heavy_input") && !detailConfirmed) {
-      onError(new ApiError("세부 무늬가 많은 입력입니다. 외곽선을 확인한 뒤 확인란을 선택하세요.", { errorType: "profile_invalid", status: 422 }));
+    if (analysis.profile.warnings.includes("detail_heavy_input")) {
+      onError(new ApiError("사진성 입력에서는 3D 생성을 지원하지 않습니다.", { errorType: "photo_input_unsupported", status: 422 }));
       return;
     }
     const pixelLength = Math.hypot(
@@ -434,10 +431,7 @@ export function DrawingPanel({ onGenerated, onError, onReset }: DrawingPanelProp
             </table>
           </div>
           {analysis.profile.warnings.includes("detail_heavy_input") && (
-            <label className="detail-confirmation">
-              <input type="checkbox" checked={detailConfirmed} onChange={(event) => setDetailConfirmed(event.target.checked)} />
-              실물 사진이 아닌 단일 정면 형상이며, 작은 무늬가 제외된 외곽선을 직접 확인했습니다.
-            </label>
+            <p className="drawing-blocked">3D 생성이 차단되었습니다. 배경과 글자를 제거한 단일 정면 선 도면을 사용하세요.</p>
           )}
 
           <div className="candidate-list">
@@ -502,7 +496,7 @@ export function DrawingPanel({ onGenerated, onError, onReset }: DrawingPanelProp
             <label>돌출 깊이 (mm)<input type="number" min="0.1" step="0.1" value={depth} onChange={(event) => setDepth(Number(event.target.value))} /></label>
             <label>설계 이름<input value={name} maxLength={120} onChange={(event) => setName(event.target.value)} /></label>
           </div>
-          <button type="button" className="drawing-generate" onClick={generate} disabled={busy || (analysis.profile.warnings.includes("detail_heavy_input") && !detailConfirmed)}>{busy ? "3D 생성 중…" : "확정하고 3D 생성 →"}</button>
+          <button type="button" className="drawing-generate" onClick={generate} disabled={busy || analysis.profile.warnings.includes("detail_heavy_input")}>{busy ? "3D 생성 중…" : analysis.profile.warnings.includes("detail_heavy_input") ? "사진 입력은 생성할 수 없습니다" : "확정하고 3D 생성 →"}</button>
         </>
       )}
     </section>

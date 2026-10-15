@@ -131,6 +131,14 @@ def register_error_handlers(app: FastAPI) -> None:
             },
         )
 
+    @app.exception_handler(SpecGenerationError)
+    async def _spec_generation_error(
+        _request: Request, exc: SpecGenerationError
+    ) -> JSONResponse:
+        content, status = error_payload(exc)
+        logger.warning("%s: %s", content["error_type"], exc)
+        return JSONResponse(status_code=status, content=content)
+
     @app.exception_handler(DrawingError)
     async def _drawing_error(_request: Request, exc: DrawingError) -> JSONResponse:
         content, status = error_payload(exc)

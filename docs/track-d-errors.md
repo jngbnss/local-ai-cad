@@ -18,10 +18,11 @@
 | D7-001 | D7 | 해결 | 중단하지 않은 백엔드가 `cv2.pyd`를 점유해 기존 `rapidocr-onnxruntime` 설치가 `WinError 5`로 실패 | 서버를 중단하고 `opencv-python-headless`와 호환되는 유지보수 패키지 `rapidocr==3.10.0` 및 CPU `onnxruntime==1.31.0` 설치 |
 | FINAL-CI-001 | 최종 CI | 해결 | GitHub hosted runner가 Node 20 기반 `checkout@v4`, `setup-node@v4` 폐기 경고를 출력 | `checkout@v5`, `setup-node@v5`, `setup-python@v6`으로 갱신 |
 | FINAL-CI-002 | 최종 CI | 외부 공지 | `ubuntu-latest`가 2026-10-19부터 Ubuntu 26으로 이동 예정 | GitHub runner 이미지 공지이며 현재 빌드는 통과. 이동 후 CI에서 호환성을 계속 검증 |
-| D8-INPUT-001 | 사용자 검증 | 관리됨 | 제품 사진의 인쇄 문자·무늬가 작은 hole 후보로 다수 검출되고 외곽선 신뢰도가 낮았음 | 최대 외곽 대비 2% 미만의 독립 형상과 외곽 대비 0.5% 미만의 hole을 제외하고 `small_holes_ignored`, `detail_heavy_input` 경고를 반환. 사진성 입력은 정확한 CAD 자동 변환 대상이 아님을 UI에 명시하고 사용자 외곽선 확인 전 생성을 차단 |
+| D8-INPUT-001 | 사용자 검증 | 관리됨 | 제품 사진의 인쇄 문자·무늬가 복잡한 polygon hole과 20점 외곽선으로 검출돼 로고가 뚫린 판처럼 생성됨 | 작은 후보 필터에 더해 전체 polygon 점이 32개를 넘으면 `detail_heavy_input`으로 분류. UI와 API 모두 3D 생성을 차단하며 실제 첨부 입력에서 경고·차단을 관찰 |
 | D8-UI-001 | 사용자 검증 | 해결 | 새 파일 분석 실패 후 이전 설계의 3D·이력이 남아 현재 결과처럼 보였고 검출 수치 표가 없었음 | 파일 선택·재분석 시작 시 이전 결과와 이력을 초기화하고 외곽점·사용 hole·예상 치수·기준선·배율 표를 추가. 실제 브라우저에서 이전 결과 제거를 관찰 |
 | D8-UI-002 | 사용자 검증 | 해결 | 과다 검출된 외곽점을 드래그만 할 수 있어 보정이 어려웠음 | 외곽점 추가, 선택 삭제, 불필요한 점 단순화를 추가. 실제 브라우저에서 4→5→4개 편집을 관찰 |
 | D8-API-001 | 사용자 검증 | 해결 | self-intersection 등 생성 요청 검증 오류가 일반 백엔드 오류로 표시됨 | drawing API의 `RequestValidationError`를 `profile_invalid` 422로 구조화하고 오류 상세를 JSON-safe하게 반환하는 회귀 테스트 추가 |
+| D9-REVISION-001 | 사용자 검증 | 해결 | “위에 판자가 다리를 다 덮어야지…” 수정에서 1.5B 모델 출력이 3회 모두 완결된 JSON을 만들지 못했고 범용 예외 처리로 프론트에는 `unknown` 오류가 표시됨 | 상판이 지지물을 덮는 명확한 공간 관계는 하부 bounding box로 결정론적으로 계산하고, `SpecGenerationError` 전용 422 handler를 등록. 동일 문장으로 상판 1200×600→1600×1000mm, v2 생성 확인 |
 
 ## 단계별 추가 규칙
 

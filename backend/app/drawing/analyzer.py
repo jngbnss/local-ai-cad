@@ -25,6 +25,7 @@ MAX_PIXELS = 4096 * 4096
 MIN_RELATIVE_CANDIDATE_AREA = 0.02
 MIN_RELATIVE_HOLE_AREA = 0.005
 DETAIL_HEAVY_IGNORED_FEATURES = 6
+MAX_REVIEWABLE_PROFILE_POINTS = 32
 MIN_CONTOUR_AREA_PX = 64.0
 
 
@@ -189,7 +190,13 @@ def analyze_image(data: bytes, region: AnalysisRegion | None = None) -> Detected
         child_index = int(hierarchy_rows[child_index][0])
     if ignored_hole_count:
         warnings.append("small_holes_ignored")
-    if ignored_outer_count + ignored_hole_count >= DETAIL_HEAVY_IGNORED_FEATURES:
+    profile_point_count = len(outer.points_px) + sum(
+        len(hole.points_px) for hole in holes if isinstance(hole, PolygonCandidate)
+    )
+    if (
+        ignored_outer_count + ignored_hole_count >= DETAIL_HEAVY_IGNORED_FEATURES
+        or profile_point_count > MAX_REVIEWABLE_PROFILE_POINTS
+    ):
         warnings.append("detail_heavy_input")
     try:
         dimensions = extract_dimensions(cropped)

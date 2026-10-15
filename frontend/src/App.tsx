@@ -33,6 +33,7 @@ const ERROR_GUIDE: Record<string, string> = {
   image_unsupported: "PNG, JPEG 또는 WebP 이미지를 선택해 주세요.",
   profile_detection_failed: "닫힌 외곽선이 선명한 영역을 다시 선택해 주세요.",
   profile_invalid: "겹치거나 외곽선 밖에 있는 구멍과 점 위치를 확인해 주세요.",
+  photo_input_unsupported: "배경·글자·원근을 제거한 단일 정면 선 도면을 올려 주세요.",
   analysis_not_found: "분석 결과가 만료됐습니다. 이미지를 다시 분석해 주세요.",
   invalid_analysis_region: "폭과 높이가 있는 영역을 다시 선택해 주세요.",
   network: "백엔드가 127.0.0.1:8000에서 실행 중인지 확인해 주세요.",
@@ -85,7 +86,7 @@ export default function App() {
 
   async function revise(event: FormEvent) {
     event.preventDefault();
-    if (!result || mode !== "text" || !revision.trim()) return;
+    if (!result || !revision.trim()) return;
     setError(null);
     setStage("llm");
     try {
@@ -177,18 +178,18 @@ export default function App() {
                 </div>
               )}
 
-              {result && (
-                <form className="revision-card" onSubmit={revise}>
-                  <label htmlFor="revision">이 설계를 수정하기</label>
-                  <div className="inline-input">
-                    <input id="revision" value={revision} onChange={(event) => setRevision(event.target.value)} placeholder="예: 다리를 10mm 더 두껍게" />
-                    <button disabled={busy || !revision.trim()}>수정</button>
-                  </div>
-                </form>
-              )}
             </>
           ) : (
             <DrawingPanel onGenerated={acceptDrawing} onError={showError} onReset={resetDrawing} />
+          )}
+          {result && (
+            <form className="revision-card" onSubmit={revise}>
+              <label htmlFor="revision">이 설계를 말로 수정하기</label>
+              <div className="inline-input">
+                <input id="revision" value={revision} onChange={(event) => setRevision(event.target.value)} placeholder="예: 상판이 다리를 모두 덮도록 넓혀줘" />
+                <button disabled={busy || !revision.trim()}>수정</button>
+              </div>
+            </form>
           )}
 
           {error && (

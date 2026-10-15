@@ -312,6 +312,13 @@ async def generate_drawing(
     )
     if stored is None:
         raise ApiError("analysis_not_found", "도면 분석 결과가 없습니다.", status=404)
+    analysis_profile = json.loads(stored.profile_path.read_text(encoding="utf-8"))
+    if "detail_heavy_input" in analysis_profile.get("warnings", []):
+        raise ApiError(
+            "photo_input_unsupported",
+            "문자·무늬·배경이 많은 사진은 정확한 CAD로 변환할 수 없습니다.",
+            status=422,
+        )
     spec = DesignSpec.model_validate(
         {
             "schema_version": "2.0",

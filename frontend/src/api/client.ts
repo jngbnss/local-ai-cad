@@ -248,6 +248,7 @@ export type ApiErrorType =
   | "image_unsupported"
   | "profile_detection_failed"
   | "profile_invalid"
+  | "photo_input_unsupported"
   | "analysis_not_found"
   | "invalid_analysis_region"
   | "network"
@@ -269,6 +270,7 @@ const KNOWN_ERROR_TYPES: readonly ApiErrorType[] = [
   "image_unsupported",
   "profile_detection_failed",
   "profile_invalid",
+  "photo_input_unsupported",
   "analysis_not_found",
   "invalid_analysis_region",
 ];
@@ -340,6 +342,7 @@ const FALLBACK_MESSAGE: Record<ApiErrorType, string> = {
   image_unsupported: "PNG, JPEG, WebP 이미지만 사용할 수 있습니다.",
   profile_detection_failed: "닫힌 외곽선을 찾지 못했습니다.",
   profile_invalid: "확정한 외곽선 또는 구멍이 유효하지 않습니다.",
+  photo_input_unsupported: "사진 입력은 정확한 CAD로 변환할 수 없습니다.",
   analysis_not_found: "도면 분석 결과가 만료됐습니다. 이미지를 다시 분석해 주세요.",
   invalid_analysis_region: "분석 영역 좌표가 올바르지 않습니다.",
   network: "백엔드에 연결할 수 없습니다.",

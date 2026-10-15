@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from io import BytesIO
+from math import cos, pi, sin
 import json
 import os
 from pathlib import Path
@@ -250,4 +251,23 @@ def test_small_text_like_features_are_not_promoted_to_holes():
 
     assert len(detected.holes) == 1
     assert "small_holes_ignored" in detected.warnings
+    assert "detail_heavy_input" in detected.warnings
+
+
+def test_complex_logo_like_hole_is_marked_as_detail_heavy():
+    image = np.full((600, 800, 3), 255, np.uint8)
+    cv2.rectangle(image, (80, 80), (720, 520), (0, 0, 0), -1)
+    points = []
+    for index in range(48):
+        angle = 2 * pi * index / 48
+        radius = 90 if index % 2 == 0 else 45
+        points.append(
+            [round(400 + radius * cos(angle)), round(300 + radius * sin(angle))]
+        )
+    cv2.fillPoly(image, [np.asarray(points, dtype=np.int32)], (255, 255, 255))
+    ok, encoded = cv2.imencode(".png", image)
+    assert ok
+
+    detected = analyze_image(encoded.tobytes())
+
     assert "detail_heavy_input" in detected.warnings

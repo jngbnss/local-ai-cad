@@ -2,6 +2,7 @@ from app.ai.metrics import InferenceMetrics
 from app.ai.providers import GenerationResult, ModelProvider
 from app.config import Settings
 from app.design.prompt import build_revision_messages
+from app.design.schema import DesignSpec
 from app.design.validator import generate_spec, revise_spec
 
 
@@ -48,3 +49,53 @@ def test_revision_preserves_every_unmentioned_field():
     assert after["parts"][0]["dimensions"]["x"] == 120
     before["parts"][0]["dimensions"]["x"] = 120
     assert after == before
+
+
+def test_revision_expands_top_to_cover_all_legs_without_llm():
+    current = DesignSpec.model_validate(
+        {
+            "schema_version": "2.0",
+            "unit": "mm",
+            "name": "desk",
+            "parts": [
+                {
+                    "id": "top",
+                    "primitive": "box",
+                    "dimensions": {"x": 1200, "y": 600, "z": 25},
+                    "position": {"x": 0, "y": 0, "z": 750},
+                },
+                *[
+                    {
+                        "id": f"leg_{index}",
+                        "primitive": "box",
+                        "dimensions": {"x": 400, "y": 400, "z": 750},
+                        "position": {"x": x, "y": y, "z": 0},
+                    }
+                    for index, (x, y) in enumerate(
+                        [(-600, -300), (600, -300), (-600, 300), (600, 300)],
+                        start=1,
+                    )
+                ],
+            ],
+            "operations": [
+                {
+                    "type": "union",
+                    "targets": ["top", "leg_1", "leg_2", "leg_3", "leg_4"],
+                }
+            ],
+        }
+    )
+    provider = QueueProvider([])
+
+    result = revise_spec(
+        provider,
+        current,
+        "위에 판자가 다리를 다 덮어야지 지금 사이즈가 너무 작잖아얼마",
+    )
+
+    top = result.spec.parts[0]
+    assert isinstance(top, type(current.parts[0]))
+    assert top.dimensions.x == 1600
+    assert top.dimensions.y == 1000
+    assert result.metrics.provider == "rule"
+    assert provider.messages == []
