@@ -23,9 +23,11 @@ from app.design.schema import (
     BoxPart,
     CylinderPart,
     DesignSpec,
+    OrthographicIntersectionPart,
     Operation,
     Part,
     SketchExtrusionPart,
+    SketchProfile,
 )
 
 
@@ -83,6 +85,12 @@ def _build_part(part: Part) -> cq.Workplane:
                         .extrude(part.depth)
                     )
                 shape = shape.cut(cutter)
+        elif isinstance(part, OrthographicIntersectionPart):
+            dims = part.dimensions
+            top = _extrude_profile("XY", part.top, dims.z)
+            front = _extrude_profile("XZ", part.front, dims.y / 2, both=True)
+            right = _extrude_profile("YZ", part.right, dims.x / 2, both=True)
+            shape = top.intersect(front).intersect(right)
         else:  # pragma: no cover - Pydantic 판별 공용체가 차단한다.
             raise TypeError(f"지원하지 않는 part 타입입니다: {type(part).__name__}")
         return shape.translate(position)
@@ -91,6 +99,38 @@ def _build_part(part: Part) -> cq.Workplane:
             f"부품 '{part.id}'({part.primitive}) 를 만들지 못했습니다: {exc}"
         ) from exc
 
+
+
+def _extrude_profile(
+    plane: str,
+    profile: SketchProfile,
+    distance: float,
+    *,
+    both: bool = False,
+) -> cq.Workplane:
+    shape = (
+        cq.Workplane(plane)
+        .polyline([(float(x), float(y)) for x, y in profile.outer])
+        .close()
+        .extrude(distance, both=both)
+    )
+    for hole in profile.holes:
+        if hole.kind == "circle":
+            cutter = (
+                cq.Workplane(plane)
+                .center(hole.center[0], hole.center[1])
+                .circle(hole.radius)
+                .extrude(distance, both=both)
+            )
+        else:
+            cutter = (
+                cq.Workplane(plane)
+                .polyline([(float(x), float(y)) for x, y in hole.points])
+                .close()
+                .extrude(distance, both=both)
+            )
+        shape = shape.cut(cutter)
+    return shape
 
 def _apply_operation(solids: dict[str, cq.Workplane], index: int, operation: Operation) -> None:
     """연산 하나를 적용하고 결과를 첫 target id 에 다시 바인딩한다."""

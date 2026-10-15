@@ -4,6 +4,20 @@
 - 목표: 정면·평면·우측면 도면 또는 다중 사진에서 검증 가능한 3D 형상을 만들고, 가능한 범위에서 편집 가능한 STEP/CadQuery 모델로 복원한다.
 - 비목표: 사진 세 장만으로 보이지 않는 형상과 실제 치수를 임의 추정해 정확한 CAD라고 표시하는 것.
 
+## 구현 현황
+
+2026-10-15 기준 V1a·V2a가 구현됐다.
+
+- React에 정면·평면·우측면 고정 업로드 슬롯과 제1각/제3각 선택, 공통 X/Y/Z 치수 입력 추가
+- `POST /api/v1/multiview/analyze`, `POST /api/v1/multiview/generate`, 분석 이미지 조회 API 추가
+- `DesignSpec 2.0`에 `orthographic_intersection` 선언형 part 추가
+- CadQuery에서 정면(XZ)·평면(XY)·우측면(YZ) 프로파일을 직교 돌출하고 교집합 계산
+- 분석 TTL 저장, 사진성 입력 차단, SQLite 이력, Three.js, STEP/STL 다운로드 연결
+- 직육면체·L형 기하 회귀, live API, 실제 Edge 브라우저 upload→analyze→generate 검증
+
+아직 구현되지 않은 범위는 뷰별 회전·crop·기준점 축척, 재투영 IoU, 숨은선 기반 포켓,
+실제 3면도+STEP 10세트, Drawing2CAD, COLMAP 사진 스캔이다.
+
 ## 1. 결론
 
 현재 Track D는 단일 정면 프로파일을 한 깊이로 돌출하는 기능이다. 3면도 대응이나 일반 제품 CAD 리버스 엔지니어링이 아니다.

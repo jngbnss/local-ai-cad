@@ -28,6 +28,7 @@ class Primitive(StrEnum):
     BOX = "box"
     CYLINDER = "cylinder"
     SKETCH_EXTRUSION = "sketch_extrusion"
+    ORTHOGRAPHIC_INTERSECTION = "orthographic_intersection"
 
 
 class BooleanOp(StrEnum):
@@ -153,7 +154,27 @@ class SketchExtrusionPart(_PartBase):
         return (max(xs) - min(xs), max(ys) - min(ys), self.depth)
 
 
-Part = Annotated[BoxPart | CylinderPart | SketchExtrusionPart, Field(discriminator="primitive")]
+
+class OrthographicIntersectionPart(_PartBase):
+    """정면(XZ)·평면(XY)·우측면(YZ) 프로파일의 직교 교집합."""
+
+    primitive: Literal[Primitive.ORTHOGRAPHIC_INTERSECTION]
+    dimensions: BoxDimensions
+    front: SketchProfile
+    top: SketchProfile
+    right: SketchProfile
+
+    def bounding_size(self) -> tuple[float, float, float]:
+        return (
+            self.dimensions.x,
+            self.dimensions.y,
+            self.dimensions.z,
+        )
+
+Part = Annotated[
+    BoxPart | CylinderPart | SketchExtrusionPart | OrthographicIntersectionPart,
+    Field(discriminator="primitive"),
+]
 
 
 class Operation(BaseModel):
@@ -166,13 +187,13 @@ class Operation(BaseModel):
 class DesignSource(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    kind: Literal["text", "drawing_import"] = "text"
+    kind: Literal["text", "drawing_import", "multiview_import"] = "text"
     analysis_id: str | None = Field(default=None, pattern=r"^[A-Za-z0-9_-]+$")
 
     @model_validator(mode="after")
-    def _drawing_requires_analysis_id(self) -> "DesignSource":
-        if self.kind == "drawing_import" and not self.analysis_id:
-            raise ValueError("drawing_import source에는 analysis_id가 필요합니다.")
+    def _import_requires_analysis_id(self) -> "DesignSource":
+        if self.kind in {"drawing_import", "multiview_import"} and not self.analysis_id:
+            raise ValueError(f"{self.kind} source에는 analysis_id가 필요합니다.")
         if self.kind == "text" and self.analysis_id is not None:
             raise ValueError("text source에는 analysis_id를 쓸 수 없습니다.")
         return self

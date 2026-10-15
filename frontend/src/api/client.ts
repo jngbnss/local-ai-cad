@@ -55,7 +55,15 @@ export interface SketchExtrusionPart extends PartBase {
   depth: number;
 }
 
-export type Part = BoxPart | CylinderPart | SketchExtrusionPart;
+export interface OrthographicIntersectionPart extends PartBase {
+  primitive: "orthographic_intersection";
+  dimensions: BoxDimensions;
+  front: { outer: [number, number][]; holes: ProfileHole[] };
+  top: { outer: [number, number][]; holes: ProfileHole[] };
+  right: { outer: [number, number][]; holes: ProfileHole[] };
+}
+
+export type Part = BoxPart | CylinderPart | SketchExtrusionPart | OrthographicIntersectionPart;
 export type BooleanOp = "union" | "cut";
 
 export interface Operation {
@@ -209,6 +217,16 @@ export interface DrawingAnalysis {
   };
 }
 
+export type MultiviewName = "front" | "top" | "right";
+export type ProjectionMethod = "first_angle" | "third_angle";
+
+export interface MultiviewAnalysis {
+  analysis_id: string;
+  projection: ProjectionMethod;
+  image_urls: Record<MultiviewName, string>;
+  views: Record<MultiviewName, DrawingAnalysis["profile"]>;
+}
+
 export interface AnalysisRegion {
   x: number;
   y: number;
@@ -251,6 +269,7 @@ export type ApiErrorType =
   | "photo_input_unsupported"
   | "analysis_not_found"
   | "invalid_analysis_region"
+  | "multiview_invalid"
   | "network"
   | "unknown";
 
@@ -273,6 +292,7 @@ const KNOWN_ERROR_TYPES: readonly ApiErrorType[] = [
   "photo_input_unsupported",
   "analysis_not_found",
   "invalid_analysis_region",
+  "multiview_invalid",
 ];
 
 export class ApiError extends Error {
@@ -345,6 +365,7 @@ const FALLBACK_MESSAGE: Record<ApiErrorType, string> = {
   photo_input_unsupported: "사진 입력은 정확한 CAD로 변환할 수 없습니다.",
   analysis_not_found: "도면 분석 결과가 만료됐습니다. 이미지를 다시 분석해 주세요.",
   invalid_analysis_region: "분석 영역 좌표가 올바르지 않습니다.",
+  multiview_invalid: "3면도의 투상법, 축척 또는 뷰 대응이 올바르지 않습니다.",
   network: "백엔드에 연결할 수 없습니다.",
   unknown: "백엔드가 요청을 처리하지 못했습니다.",
 };
@@ -438,6 +459,31 @@ export function generateDrawing(payload: {
 
 export function createDesign(prompt: string): Promise<DesignResponse> {
   return postJson<DesignResponse>(`${BASE}/design`, { prompt });
+}
+
+export function analyzeMultiview(
+  images: Record<MultiviewName, File>,
+  projection: ProjectionMethod,
+): Promise<MultiviewAnalysis> {
+  const body = new FormData();
+  body.append("front", images.front);
+  body.append("top", images.top);
+  body.append("right", images.right);
+  body.append("projection", projection);
+  return request<MultiviewAnalysis>(`${BASE}/multiview/analyze`, {
+    method: "POST",
+    body,
+  });
+}
+
+export function generateMultiview(payload: {
+  analysis_id: string;
+  name: string;
+  width: number;
+  depth: number;
+  height: number;
+}): Promise<DrawingGenerateResponse> {
+  return postJson<DrawingGenerateResponse>(`${BASE}/multiview/generate`, payload);
 }
 
 export type DesignStage = "llm" | "geometry";

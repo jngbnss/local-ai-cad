@@ -64,12 +64,20 @@
 - 작은 인쇄 문자·무늬 필터, 복잡한 사진성 contour의 UI·API 생성 차단, 검출 요약표, 이전 결과 초기화
 - 합성 30개 회귀 30/30. 사진성 입력은 자동 CAD 대상이 아니며 깨끗한 단일 정면 도면 10개는 아직 미검증
 
+### Track V — 3면 CAD 복원 베타
+
+- 정면(XZ)·평면(XY)·우측면(YZ) 고정 업로드와 제1각/제3각 선택
+- 공통 가로·깊이·높이로 각 실루엣을 mm 좌표에 정합
+- `orthographic_intersection` part와 CadQuery 직교 돌출·교집합
+- 사진성 입력 차단, SQLite 이력, Three.js 미리보기, STEP/STL 다운로드 연결
+- 뷰별 crop·기준점 축척, 재투영 IoU, 숨은선·포켓, 실제 3면도 10세트는 미구현
+
 ## 2. 현재 검증 상태
 
-- 백엔드 테스트: **63개 통과**
+- 백엔드 테스트: **66개 통과**
 - 프론트엔드 TypeScript 검사 및 프로덕션 빌드: 통과
 - Track D 합성 회귀: analyze → confirm → CAD → STEP **30/30**
-- 실제 Edge 브라우저: 동일 수정 문장으로 v2 생성, 상판 1600×1000mm 확인, 첨부 사진 3D 생성 차단, 런타임 오류 없음
+- 실제 Edge 브라우저: 자연어 v2 수정과 사진 차단, 3면 업로드→분석→120×80×60mm 유효 CAD→STEP 경로 통과
 - 작업 브랜치: `main`
 
 관련 문서:
@@ -79,6 +87,7 @@
 - `docs/roadmap.md`
 - `docs/track-d-checklist.md`
 - `docs/track-v-cad-reverse-engineering-design.md`
+- `docs/track-v-checklist.md`
 - `experiments/drawing-e2e/report.md`
 
 ## 3. 실행 방법

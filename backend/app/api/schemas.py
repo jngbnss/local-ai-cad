@@ -101,6 +101,13 @@ class DrawingAnalyzeResponse(BaseModel):
     profile: dict[str, Any]
 
 
+
+class MultiviewAnalyzeResponse(BaseModel):
+    analysis_id: str
+    projection: str
+    image_urls: dict[str, str]
+    views: dict[str, dict[str, Any]]
+
 class DrawingGenerateRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -109,6 +116,16 @@ class DrawingGenerateRequest(BaseModel):
     profile: SketchProfile
     depth: float = Field(ge=0.1, le=10_000.0)
 
+
+
+class MultiviewGenerateRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    analysis_id: str = Field(pattern=r"^[a-f0-9]{32}$")
+    name: str = Field(min_length=1, max_length=120)
+    width: float = Field(ge=0.1, le=10_000.0)
+    depth: float = Field(ge=0.1, le=10_000.0)
+    height: float = Field(ge=0.1, le=10_000.0)
 
 class DrawingGenerateResponse(BaseModel):
     design_id: str

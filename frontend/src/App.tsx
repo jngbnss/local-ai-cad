@@ -16,12 +16,13 @@ import type {
   HistoryEntry,
 } from "./api/client";
 import { DrawingPanel } from "./components/DrawingPanel";
+import { MultiviewPanel } from "./components/MultiviewPanel";
 import { HistoryPanel } from "./components/HistoryPanel";
 
 const Viewer = lazy(() => import("./components/Viewer").then((module) => ({ default: module.Viewer })));
 
 type Stage = "idle" | "llm" | "geometry" | "done";
-type InputMode = "text" | "drawing";
+type InputMode = "text" | "drawing" | "multiview";
 
 const ERROR_GUIDE: Record<string, string> = {
   cuda_unavailable: "CUDA와 그래픽 드라이버 상태를 확인해 주세요.",
@@ -36,6 +37,7 @@ const ERROR_GUIDE: Record<string, string> = {
   photo_input_unsupported: "배경·글자·원근을 제거한 단일 정면 선 도면을 올려 주세요.",
   analysis_not_found: "분석 결과가 만료됐습니다. 이미지를 다시 분석해 주세요.",
   invalid_analysis_region: "폭과 높이가 있는 영역을 다시 선택해 주세요.",
+  multiview_invalid: "정면·평면·우측면 역할과 공통 X/Y/Z 치수를 확인해 주세요.",
   network: "백엔드가 127.0.0.1:8000에서 실행 중인지 확인해 주세요.",
   unknown: "백엔드 로그에서 요청 ID와 상세 오류를 확인해 주세요.",
 };
@@ -151,6 +153,7 @@ export default function App() {
           <nav className="input-tabs" aria-label="설계 입력 방식">
             <button type="button" className={mode === "text" ? "is-active" : ""} onClick={() => setMode("text")}>텍스트 설계</button>
             <button type="button" className={mode === "drawing" ? "is-active" : ""} onClick={() => setMode("drawing")}>2D 도면 가져오기</button>
+            <button type="button" className={mode === "multiview" ? "is-active" : ""} onClick={() => setMode("multiview")}>3면 CAD 복원</button>
           </nav>
           <section className="intro">
             <span className="eyebrow">PRIVATE · GPU LOCAL</span>
@@ -179,8 +182,10 @@ export default function App() {
               )}
 
             </>
-          ) : (
+          ) : mode === "drawing" ? (
             <DrawingPanel onGenerated={acceptDrawing} onError={showError} onReset={resetDrawing} />
+          ) : (
+            <MultiviewPanel onGenerated={acceptDrawing} onError={showError} onReset={resetDrawing} />
           )}
           {result && (
             <form className="revision-card" onSubmit={revise}>

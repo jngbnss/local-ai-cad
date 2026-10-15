@@ -32,6 +32,8 @@ from app.api.schemas import (
     GenerateResponse,
     GeometryReport,
     HealthResponse,
+    MultiviewAnalyzeResponse,
+    MultiviewGenerateRequest,
     HistoryEntry,
     HistoryResponse,
     Metrics,
@@ -51,6 +53,12 @@ from app.drawing.analyzer import (
     overlay_svg,
 )
 from app.drawing.store import cleanup_analyses, create_analysis, get_analysis
+from app.multiview.service import (
+    VIEW_NAMES,
+    build_spec as build_multiview_spec,
+    create_analysis as create_multiview_analysis,
+    get_analysis as get_multiview_analysis,
+)
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1")
@@ -341,6 +349,87 @@ async def generate_drawing(
     )
     record = await run_in_threadpool(
         state.history.create, spec, f"drawing:{body.analysis_id}"
+    )
+    geometry, artifacts = await run_in_threadpool(_materialise, state, record)
+    return DrawingGenerateResponse(
+        design_id=record.design_id,
+        version=record.version,
+        spec=record.spec,
+        artifacts=artifacts,
+        geometry=geometry,
+        request_id=_request_id(),
+    )
+
+
+@router.post("/multiview/analyze", response_model=MultiviewAnalyzeResponse)
+async def analyze_multiview(
+    request: Request,
+    front: UploadFile = File(...),
+    top: UploadFile = File(...),
+    right: UploadFile = File(...),
+    projection: str = Form(default="third_angle"),
+) -> MultiviewAnalyzeResponse:
+    if projection not in {"first_angle", "third_angle"}:
+        raise ApiError(
+            "multiview_invalid",
+            "투상법은 first_angle 또는 third_angle이어야 합니다.",
+            status=422,
+        )
+    uploads = {"front": front, "top": top, "right": right}
+    images = {
+        view: await uploads[view].read(MAX_FILE_BYTES + 1)
+        for view in VIEW_NAMES
+    }
+    root = _state(request).artifact_dir / "multiview-analyses"
+    stored, manifest = await run_in_threadpool(
+        create_multiview_analysis,
+        root,
+        images=images,
+        projection=projection,
+    )
+    base = f"/api/v1/multiview/analyses/{stored.analysis_id}"
+    return MultiviewAnalyzeResponse(
+        analysis_id=stored.analysis_id,
+        projection=projection,
+        image_urls={view: f"{base}/{view}" for view in VIEW_NAMES},
+        views=manifest["views"],
+    )
+
+
+@router.get("/multiview/analyses/{analysis_id}/{view}")
+async def multiview_analysis_asset(
+    request: Request, analysis_id: str, view: str
+) -> FileResponse:
+    stored = get_multiview_analysis(
+        _state(request).artifact_dir / "multiview-analyses", analysis_id
+    )
+    if stored is None:
+        raise ApiError("analysis_not_found", "3면도 분석 결과가 없습니다.", status=404)
+    if view not in VIEW_NAMES:
+        raise ApiError("analysis_asset_not_found", "지원하지 않는 3면도 뷰입니다.", status=404)
+    return FileResponse(stored.image_path(view), media_type="image/png")
+
+
+@router.post("/multiview/generate", response_model=DrawingGenerateResponse)
+async def generate_multiview(
+    request: Request, body: MultiviewGenerateRequest
+) -> DrawingGenerateResponse:
+    state = _state(request)
+    stored = get_multiview_analysis(
+        state.artifact_dir / "multiview-analyses", body.analysis_id
+    )
+    if stored is None:
+        raise ApiError("analysis_not_found", "3면도 분석 결과가 없습니다.", status=404)
+    spec = await run_in_threadpool(
+        build_multiview_spec,
+        stored,
+        name=body.name,
+        width=body.width,
+        depth=body.depth,
+        height=body.height,
+    )
+    record = await run_in_threadpool(
+        state.history.create, spec, f"multiview:{body.analysis_id}"
     )
     geometry, artifacts = await run_in_threadpool(_materialise, state, record)
     return DrawingGenerateResponse(

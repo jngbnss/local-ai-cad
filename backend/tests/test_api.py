@@ -1,4 +1,5 @@
 import json
+from io import BytesIO
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -6,6 +7,7 @@ from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
+from PIL import Image, ImageDraw
 
 from app.design.schema import DesignSpec
 from app.design.validator import SpecAttempt, SpecGenerationError
@@ -256,3 +258,50 @@ def test_revision_generation_error_is_structured(client, monkeypatch):
     assert response.status_code == 422
     assert response.json()["error_type"] == "schema_invalid"
     assert response.json()["detail"]["attempts"][0]["failure"].startswith("출력에서")
+
+
+def _rectangle_png(width: int, height: int) -> bytes:
+    image = Image.new("RGB", (width + 80, height + 80), "white")
+    ImageDraw.Draw(image).rectangle((40, 40, 40 + width, 40 + height), fill="black")
+    stream = BytesIO()
+    image.save(stream, format="PNG")
+    return stream.getvalue()
+
+
+def test_multiview_analyze_generate_and_download_step(client):
+    analyzed_response = client.post(
+        "/api/v1/multiview/analyze",
+        files={
+            "front": ("front.png", _rectangle_png(300, 200), "image/png"),
+            "top": ("top.png", _rectangle_png(300, 160), "image/png"),
+            "right": ("right.png", _rectangle_png(160, 200), "image/png"),
+        },
+        data={"projection": "third_angle"},
+    )
+
+    assert analyzed_response.status_code == 200
+    analyzed = analyzed_response.json()
+    assert set(analyzed["views"]) == {"front", "top", "right"}
+    assert all(
+        client.get(analyzed["image_urls"][view]).status_code == 200
+        for view in ("front", "top", "right")
+    )
+
+    generated = client.post(
+        "/api/v1/multiview/generate",
+        json={
+            "analysis_id": analyzed["analysis_id"],
+            "name": "orthographic-block",
+            "width": 120,
+            "depth": 80,
+            "height": 60,
+        },
+    )
+
+    assert generated.status_code == 200
+    payload = generated.json()
+    assert payload["spec"]["source"]["kind"] == "multiview_import"
+    assert payload["spec"]["parts"][0]["primitive"] == "orthographic_intersection"
+    assert payload["geometry"]["bounding_box_mm"] == pytest.approx([120, 80, 60], abs=0.01)
+    assert payload["geometry"]["is_valid"] is True
+    assert client.get(payload["artifacts"]["step"]).status_code == 200
