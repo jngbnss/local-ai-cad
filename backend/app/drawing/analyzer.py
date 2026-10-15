@@ -22,6 +22,9 @@ from app.drawing.ocr import DimensionCandidate, OcrUnavailableError, extract_dim
 
 MAX_FILE_BYTES = 10 * 1024 * 1024
 MAX_PIXELS = 4096 * 4096
+MIN_RELATIVE_CANDIDATE_AREA = 0.02
+MIN_RELATIVE_HOLE_AREA = 0.005
+DETAIL_HEAVY_IGNORED_FEATURES = 6
 MIN_CONTOUR_AREA_PX = 64.0
 
 
@@ -156,25 +159,38 @@ def analyze_image(data: bytes, region: AnalysisRegion | None = None) -> Detected
         raise ProfileDetectionError("최소 면적을 만족하는 외곽선 후보가 없습니다.")
 
     roots.sort(key=lambda item: item[1], reverse=True)
+    largest_root_area = roots[0][1]
+    candidate_floor = max(MIN_CONTOUR_AREA_PX, largest_root_area * MIN_RELATIVE_CANDIDATE_AREA)
+    ignored_outer_count = sum(area < candidate_floor for _index, area in roots)
+    roots = [item for item in roots if item[1] >= candidate_floor]
     outer_candidates = [_polygon(contours[index]) for index, _area in roots]
     outer_index, outer_area = roots[0]
     outer = outer_candidates[0]
     warnings: list[str] = []
     if len(outer_candidates) > 1:
         warnings.append("ambiguous_outer")
+    if ignored_outer_count:
+        warnings.append("small_outer_candidates_ignored")
 
     holes: list[HoleCandidate] = []
+    ignored_hole_count = 0
     child_index = int(hierarchy_rows[outer_index][2])
     while child_index != -1:
         contour = contours[child_index]
         area = abs(float(cv2.contourArea(contour)))
-        if area >= MIN_CONTOUR_AREA_PX:
-            ratio = area / outer_area if outer_area else 0.0
+        ratio = area / outer_area if outer_area else 0.0
+        if area >= MIN_CONTOUR_AREA_PX and ratio >= MIN_RELATIVE_HOLE_AREA:
             if ratio >= 0.65:
                 warnings.append("double_contour_suspected")
             else:
                 holes.append(_hole(contour))
+        elif area >= MIN_CONTOUR_AREA_PX:
+            ignored_hole_count += 1
         child_index = int(hierarchy_rows[child_index][0])
+    if ignored_hole_count:
+        warnings.append("small_holes_ignored")
+    if ignored_outer_count + ignored_hole_count >= DETAIL_HEAVY_IGNORED_FEATURES:
+        warnings.append("detail_heavy_input")
     try:
         dimensions = extract_dimensions(cropped)
     except OcrUnavailableError:

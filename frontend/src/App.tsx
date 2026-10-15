@@ -122,6 +122,13 @@ export default function App() {
     setError(caught);
   }
 
+  function resetDrawing() {
+    setResult(null);
+    setHistoryEntries([]);
+    setError(null);
+    setStage("idle");
+  }
+
   const busy = stage === "llm" || stage === "geometry";
 
   return (
@@ -181,7 +188,7 @@ export default function App() {
               )}
             </>
           ) : (
-            <DrawingPanel onGenerated={acceptDrawing} onError={showError} />
+            <DrawingPanel onGenerated={acceptDrawing} onError={showError} onReset={resetDrawing} />
           )}
 
           {error && (

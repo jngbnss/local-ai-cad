@@ -99,13 +99,26 @@ button:disabled { cursor: not-allowed; opacity: .5; }
 .drawing-actions button:not(.primary-button), .editor-toolbar button, .candidate-list button { padding: 8px 10px; border: 1px solid #c9c7c0; border-radius: 3px; background: #fff; color: #383a3c; font-size: 10px; }
 .editor-toolbar button.is-active { border-color: #df6d27; color: #b64f1a; }
 .profile-editor svg { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; }
+.profile-editor svg.is-picking { cursor: crosshair; }
 .profile-outer { fill: rgba(0,168,107,.07); stroke: #00a86b; stroke-width: 3; vector-effect: non-scaling-stroke; }
 .profile-hole { fill: rgba(211,51,51,.08); stroke: #d33; stroke-width: 3; vector-effect: non-scaling-stroke; }
 .point-handle { fill: #fff; stroke: #008255; stroke-width: 3; cursor: move; vector-effect: non-scaling-stroke; }
+.point-handle.is-selected { fill: #df6d27; stroke: #fff; }
 .hole-handle { fill: #fff; stroke: #c22d2d; stroke-width: 3; cursor: move; vector-effect: non-scaling-stroke; }
 .calibration-line { stroke: #345fe0; stroke-width: 2; stroke-dasharray: 5 4; vector-effect: non-scaling-stroke; pointer-events: none; }
 .calibration-point { fill: #345fe0; stroke: #fff; stroke-width: 2; vector-effect: non-scaling-stroke; pointer-events: none; }
-.drawing-warning { margin: 9px 0 0; padding: 8px; border-left: 3px solid #d99225; background: #fff6e7; color: #73511f; font-size: 10px; }
+.drawing-warning { margin: 9px 0 0; padding: 9px 10px; border-left: 3px solid #d99225; background: #fff6e7; color: #73511f; font-size: 10px; }
+.drawing-warning strong { display: block; margin-bottom: 4px; }
+.drawing-warning ul { margin: 0; padding-left: 16px; line-height: 1.5; }
+.profile-summary { margin-top: 12px; overflow: hidden; border: 1px solid #cfcdc5; border-radius: 3px; background: #fff; }
+.profile-summary > strong { display: block; padding: 8px 10px; border-bottom: 1px solid #dfddd6; font-size: 11px; }
+.profile-summary table { width: 100%; border-collapse: collapse; font-size: 10px; }
+.profile-summary th, .profile-summary td { padding: 7px 8px; border-bottom: 1px solid #eceae4; text-align: left; }
+.profile-summary th { width: 20%; color: #6f716c; font-weight: 600; }
+.profile-summary td { width: 30%; font-family: "Cascadia Mono", Consolas, monospace; }
+.profile-summary tr:last-child th, .profile-summary tr:last-child td { border-bottom: 0; }
+.detail-confirmation { display: flex; align-items: flex-start; gap: 7px; margin-top: 8px; padding: 9px; border: 1px solid #d9a24d; border-radius: 3px; background: #fffaf1; color: #62491f; font-size: 10px; line-height: 1.45; }
+.detail-confirmation input { margin-top: 2px; }
 .candidate-list, .hole-list { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; margin-top: 12px; }
 .candidate-list strong, .hole-list strong { flex: 0 0 100%; font-size: 11px; }
 .hole-list label { display: flex; align-items: center; gap: 4px; font-size: 10px; }
@@ -120,6 +133,7 @@ button:disabled { cursor: not-allowed; opacity: .5; }
 .drawing-fields label:last-child { grid-column: 1 / -1; }
 .drawing-fields input { width: 100%; min-width: 0; padding: 8px; border: 1px solid #cfcdc5; border-radius: 3px; background: #fff; }
 .drawing-fields small { color: #8b8c87; }
+.editor-help { margin: 7px 0 0; color: #71736e; font-size: 9px; line-height: 1.55; }
 .drawing-generate { width: 100%; margin-top: 12px; padding: 12px; border: 0; border-radius: 3px; background: #df6d27; color: #fff; font-weight: 700; }
 .viewer-loading { align-items: center; justify-content: center; color: #d9d9d5; font-size: 12px; }
 @media (max-width: 920px) { .workspace { grid-template-columns: 1fr; } .viewer { min-height: 470px; } .viewer__canvas { min-height: 420px; } }

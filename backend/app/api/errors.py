@@ -10,6 +10,8 @@ from __future__ import annotations
 import logging
 
 from fastapi import FastAPI, Request
+from fastapi.encoders import jsonable_encoder
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from app.ai.errors import (
@@ -107,6 +109,26 @@ def register_error_handlers(app: FastAPI) -> None:
         return JSONResponse(
             status_code=exc.status,
             content={"error_type": exc.error_type, "message": exc.message, "detail": None},
+        )
+
+    @app.exception_handler(RequestValidationError)
+    async def _validation_error(request: Request, exc: RequestValidationError) -> JSONResponse:
+        drawing_request = request.url.path.startswith("/api/v1/drawing/")
+        return JSONResponse(
+            status_code=422,
+            content={
+                "error_type": "profile_invalid" if drawing_request else "schema_invalid",
+                "message": (
+                    "도면 프로파일의 점 또는 구멍이 유효하지 않습니다."
+                    if drawing_request
+                    else "요청 형식이 유효하지 않습니다."
+                ),
+                "detail": {
+                    "errors": jsonable_encoder(
+                        exc.errors(), custom_encoder={ValueError: str}
+                    )
+                },
+            },
         )
 
     @app.exception_handler(DrawingError)

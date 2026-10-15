@@ -161,3 +161,22 @@ def test_drawing_generate_requires_live_analysis(client):
 
     assert response.status_code == 404
     assert response.json()["error_type"] == "analysis_not_found"
+
+
+def test_drawing_generate_validation_error_is_structured(client):
+    response = client.post(
+        "/api/v1/drawing/generate",
+        json={
+            "analysis_id": "0" * 32,
+            "name": "invalid-profile",
+            "profile": {
+                "outer": [[0, 0], [10, 10], [0, 10], [10, 0]],
+                "holes": [],
+            },
+            "depth": 5,
+        },
+    )
+
+    assert response.status_code == 422
+    assert response.json()["error_type"] == "profile_invalid"
+    assert response.json()["detail"]["errors"]

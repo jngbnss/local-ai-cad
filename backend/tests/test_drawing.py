@@ -234,3 +234,20 @@ def test_ocr_failure_preserves_manual_analysis(tmp_path, monkeypatch):
     assert detected.outer.points_px
     assert detected.dimensions == []
     assert "ocr_unavailable" in detected.warnings
+
+
+def test_small_text_like_features_are_not_promoted_to_holes():
+    image = np.full((600, 800, 3), 255, np.uint8)
+    cv2.rectangle(image, (80, 80), (720, 520), (0, 0, 0), -1)
+    cv2.circle(image, (400, 300), 55, (255, 255, 255), -1)
+    for index in range(8):
+        x = 130 + index * 65
+        cv2.rectangle(image, (x, 130), (x + 12, 146), (255, 255, 255), -1)
+    ok, encoded = cv2.imencode(".png", image)
+    assert ok
+
+    detected = analyze_image(encoded.tobytes())
+
+    assert len(detected.holes) == 1
+    assert "small_holes_ignored" in detected.warnings
+    assert "detail_heavy_input" in detected.warnings
